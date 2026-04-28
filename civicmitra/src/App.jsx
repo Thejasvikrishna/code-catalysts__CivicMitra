@@ -1,8 +1,12 @@
 import React from "react";
-import FeaturePage from "./m3-sumith/FeaturePage";
+import Dashboard from "./components/dashboard/Dashboard";
 
 function App() {
-  return <FeaturePage />;
+  return (
+    <div>
+      <Dashboard issues={[]} onUpvote={() => {}} />
+    </div>
+  );
 }
 
 export default App;
