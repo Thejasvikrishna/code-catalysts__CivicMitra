@@ -1,122 +1,114 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// App.jsx — Member 4 | Integration Hub
+// Wires all 4 members' components together.
+// Owns: state (activeTab), data (useIssues), service calls (addIssue, upvoteIssue)
+// Props flow DOWN — no component imports Firebase directly except Member 4's files.
 
-function App() {
-  const [count, setCount] = useState(0)
+import "./i18n/i18n"; // ← Member 1's i18n side-effect import — MUST be first
 
+import React, { useState } from "react";
+
+// Member 4 internals
+import { useIssues }    from "./hooks/useIssues";
+import { addIssue, upvoteIssue } from "./services/issueService";
+import { uploadImage }  from "./services/uploadImage";
+import Navbar           from "./components/shared/Navbar";
+
+// ← Member 1's component
+import ReportForm from "./components/form/ReportForm";
+// ← Member 2's component
+import IssueMap   from "./components/map/IssueMap";
+// ← Member 3's component
+import Dashboard  from "./components/dashboard/Dashboard";
+
+export default function App() {
+  const { issues, loading, error } = useIssues();
+  const [activeTab, setActiveTab]  = useState("Report Issue");
+
+  // Called by Member 1's ReportForm via onSubmit prop
+  async function handleSubmit(issueData) {
+    try {
+      await addIssue(issueData);
+      setActiveTab("Live Map"); // Navigate to map after successful report
+    } catch (err) {
+      console.error("Failed to submit issue:", err);
+      alert(`Submission failed: ${err.message}`);
+    }
+  }
+
+  // ── Loading State ──────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={styles.centered}>
+        <div style={styles.spinner} />
+        <p style={{ color: "#01696f", marginTop: "1rem" }}>Loading CivicMitra…</p>
+      </div>
+    );
+  }
+
+  // ── Error State ────────────────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div style={styles.centered}>
+        <p style={{ color: "#c0392b", fontSize: "1rem" }}>
+          ❌ Firebase Error: {error}
+        </p>
+        <p style={{ color: "#555", fontSize: "0.85rem" }}>
+          Check your firebaseConfig.js credentials and DB rules.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Main App ───────────────────────────────────────────────────────────────
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
+      {/* Member 4's Navbar */}
+      <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <div className="ticks"></div>
+      <main style={{ padding: "1.25rem", maxWidth: "1100px", margin: "0 auto" }}>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* ← Member 1's component — receives onSubmit and uploadImage as props */}
+        {activeTab === "Report Issue" && (
+          <ReportForm
+            onSubmit={handleSubmit}
+            uploadImage={uploadImage}
+          />
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* ← Member 2's component — receives live issues array as prop */}
+        {activeTab === "Live Map" && (
+          <IssueMap issues={issues} />
+        )}
+
+        {/* ← Member 3's component — receives live issues array and upvote handler */}
+        {activeTab === "Dashboard" && (
+          <Dashboard
+            issues={issues}
+            onUpvote={upvoteIssue}
+          />
+        )}
+
+      </main>
+    </div>
+  );
 }
 
-export default App
+// ── Inline styles (App-level only) ──────────────────────────────────────────
+const styles = {
+  centered: {
+    display:        "flex",
+    flexDirection:  "column",
+    justifyContent: "center",
+    alignItems:     "center",
+    height:         "100vh",
+    backgroundColor:"#f4f6f8",
+  },
+  spinner: {
+    width:       "40px",
+    height:      "40px",
+    border:      "4px solid #d0e8e9",
+    borderTop:   "4px solid #01696f",
+    borderRadius:"50%",
+    animation:   "spin 0.8s linear infinite",
+  },
+};
