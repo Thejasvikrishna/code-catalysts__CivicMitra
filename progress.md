@@ -72,3 +72,30 @@
 ### Next
 - [ ] M4: Firebase + Cloudinary integration
 - [ ] All: Integration testing across modules
+---
+
+## Update 6 — Map Updates, Integration & Routing
+**Date:** April 28, 2026
+
+### Done
+- M2 (Vishnu): Updated map and colour changes (PR #6, #8 merged)
+- M4 (Thejasvi): Added other files and updated files (PR #7, #9 merged)
+- M4 (Thejasvi): Updated `App.jsx` for routing/integration
+- README updated
+
+### Next
+- [ ] All: Final integration and UI consistency check
+- [ ] M4: Firebase + Cloudinary setup
+---
+
+## Update 7 — Bug Fixes & Final Polishing
+**Date:** April 28, 2026
+
+### Done
+- M3 (Sumith): Dark mode correction + removed unwanted files (PR #10 merged)
+- M4 (Thejasvi): Updated files across multiple iterations (PR #11, #12 merged)
+- M4 (Thejasvi): Updated `App.jsx` for final routing fixes
+
+### Next
+- [ ] All: Final integration testing
+- [ ] M4: Firebase + Cloudinary setup
