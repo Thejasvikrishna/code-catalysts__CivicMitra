@@ -98,3 +98,14 @@
 ### Next
 - [ ] All: Final integration testing
 - [ ] M4: Firebase + Cloudinary setup
+---
+
+## Update 8 — Final Submission
+**Date:** April 28, 2026
+
+### Done
+- M4 (Thejasvi): Final commits — all files finalized (PR #13, #14 merged)
+- M4 (Thejasvi): Cleaned up README — removed old, created new proper README
+- progress.md formatting fixed and updated
+
+### Status: ✅ Project Submitted
