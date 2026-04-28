@@ -1,73 +1,80 @@
-// Navbar.jsx — Member 4 | Shared component used in App.jsx
-// Props: activeTab (string), onTabChange (function)
+// useIssues.js — Member 4 | Real-time Firebase subscription hook
+// Contract: useIssues() → { issues: Array, loading: boolean, error: string|null }
+// Used by App.jsx to feed live data to all member components.
 
-import React from "react";
+import { useState, useEffect } from "react";
+import { ref, onValue, off } from "firebase/database";
+import { db } from "../services/firebaseConfig";
 
-const TABS = [
-  { label: "Report Issue", icon: "📝" },
-  { label: "Live Map",     icon: "🗺️" },
-  { label: "Dashboard",    icon: "📊" },
-];
+// ── Normalize a single Firebase issue record ─────────────────────────────────
+// Firebase push() stores arrays as objects keyed by push IDs.
+// This converts timeline back into a sorted array and fills in missing fields.
+function normalizeIssue(id, value) {
+  if (!value || typeof value !== "object") return null;
 
-export default function Navbar({ activeTab, onTabChange }) {
-  return (
-    <nav
-      aria-label="Main navigation"
-      style={{
-        position:        "sticky",
-        top:             0,
-        zIndex:          1000,
-        backgroundColor: "#01696f",
-        display:         "flex",
-        alignItems:      "center",
-        justifyContent:  "space-between",
-        padding:         "0 1.5rem",
-        height:          "56px",
-        boxShadow:       "0 2px 8px rgba(0,0,0,0.25)",
-      }}
-    >
-      {/* Brand */}
-      <span
-        style={{
-          color:       "#fff",
-          fontWeight:  700,
-          fontSize:    "1.15rem",
-          letterSpacing: "0.4px",
-          userSelect:  "none",
-        }}
-      >
-        🏙️ CivicMitra
-      </span>
+  // Convert timeline object → sorted array (may be undefined/null)
+  let timeline = [];
+  if (value.timeline && typeof value.timeline === "object") {
+    timeline = Object.values(value.timeline)
+      .filter(Boolean)
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  }
 
-      {/* Tab Buttons */}
-      <div style={{ display: "flex", gap: "0.25rem" }}>
-        {TABS.map(({ label, icon }) => {
-          const isActive = activeTab === label;
-          return (
-            <button
-              key={label}
-              onClick={() => onTabChange(label)}
-              aria-current={isActive ? "page" : undefined}
-              style={{
-                background:   "none",
-                border:       "none",
-                borderBottom: isActive
-                  ? "2px solid #ffffff"
-                  : "2px solid transparent",
-                color:      isActive ? "#ffffff" : "rgba(255,255,255,0.60)",
-                fontWeight:  isActive ? 600 : 400,
-                fontSize:    "0.9rem",
-                padding:     "0.55rem 0.85rem",
-                cursor:      "pointer",
-                transition:  "color 0.2s ease, border-color 0.2s ease",
-                whiteSpace:  "nowrap",
-              }}
-            >
-              {icon} {label}
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
+  return {
+    id,
+    title:       value.title       || "Untitled Issue",
+    description: value.description || "",
+    category:    value.category    || "Other",
+    imageUrl:    value.imageUrl    || "",
+    audioText:   value.audioText   || "",
+    lat:         typeof value.lat === "number" ? value.lat : null,
+    lng:         typeof value.lng === "number" ? value.lng : null,
+    upvotes:     typeof value.upvotes === "number" ? value.upvotes : 0,
+    status:      value.status      || "open",
+    createdAt:   value.createdAt   || null,
+    timeline,
+  };
+}
+
+export function useIssues() {
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const issuesRef = ref(db, "issues");
+
+    // Real-time listener — fires on every DB change
+    const unsubscribe = onValue(
+      issuesRef,
+      (snapshot) => {
+        const data = snapshot.val();
+
+        if (!data) {
+          setIssues([]);
+          setLoading(false);
+          return;
+        }
+
+        // Convert Firebase object → normalized array, sorted newest first
+        const issueArray = Object.entries(data)
+          .map(([id, value]) => normalizeIssue(id, value))
+          .filter(Boolean) // drop null entries
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        setIssues(issueArray);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("useIssues: Firebase read failed:", err);
+        setError(err.message || "Failed to load issues.");
+        setLoading(false);
+      }
+    );
+
+    // Cleanup on unmount — prevents memory leaks
+    return () => off(issuesRef, "value", unsubscribe);
+  }, []);
+
+  return { issues, loading, error };
 }

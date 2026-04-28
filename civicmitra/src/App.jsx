@@ -1,15 +1,20 @@
-// App.jsx — Member 4 | Integration Hub (updated: SmartAssistant wired in)
-// Wires all 4 members' components together.
+// App.jsx — Member 4 | Integration Hub
+// Wires auth, citizen flow, and authority flow together.
 
 import "./i18n/i18n"; // ← Member 1's i18n side-effect import — MUST be first
+import "./App.css";
 
 import React, { useState } from "react";
+
+// Auth
+import { useAuth }    from "./hooks/useAuth";
+import { logoutUser } from "./services/authService";
+import LoginPage      from "./components/auth/LoginPage";
 
 // Member 4 internals
 import { useIssues }                        from "./hooks/useIssues";
 import { addIssue, upvoteIssue }            from "./services/issueService";
 import { uploadImage }                      from "./services/uploadImage";
-// ← NEW: SmartAssistant functions
 import {
   detectCategory,
   suggestDescription,
@@ -17,18 +22,52 @@ import {
 } from "./services/smartAssistant";
 import Navbar from "./components/shared/Navbar";
 
-// ← Member 1's component
-import ReportForm from "./components/form/ReportForm";
-// ← Member 2's component
-import IssueMap   from "./components/map/IssueMap";
-// ← Member 3's component
-import Dashboard  from "./components/dashboard/Dashboard";
+// Member components
+import ReportForm      from "./components/form/ReportForm";
+import IssueMap        from "./components/map/IssueMap";
+import Dashboard       from "./components/dashboard/Dashboard";
+import AuthorityPanel  from "./components/authority/AuthorityPanel";
 
 export default function App() {
-  const { issues, loading, error } = useIssues();
-  const [activeTab, setActiveTab]  = useState("Report Issue");
+  const { user, userRole, authLoading } = useAuth();
+  const { issues, loading, error }      = useIssues();
+  const [activeTab, setActiveTab]       = useState(null); // set after role known
 
-  // Called by Member 1's ReportForm via onSubmit prop
+  // ── Auth Loading ────────────────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div style={styles.centered}>
+        <div style={styles.spinner} />
+        <p style={{ color: "#01696f", marginTop: "1rem" }}>Loading CivicMitra…</p>
+      </div>
+    );
+  }
+
+  // ── Not logged in → Login Page ──────────────────────────────────────────
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  // ── Determine tabs based on role ────────────────────────────────────────
+  const isAuthority = userRole === "authority";
+
+  const CITIZEN_TABS = [
+    { label: "Report Issue", icon: "📝" },
+    { label: "Live Map",     icon: "🗺️" },
+    { label: "Dashboard",    icon: "📊" },
+  ];
+
+  const AUTHORITY_TABS = [
+    { label: "Alerts",     icon: "🔔" },
+    { label: "Live Map",   icon: "🗺️" },
+    { label: "Dashboard",  icon: "📊" },
+  ];
+
+  const tabs = isAuthority ? AUTHORITY_TABS : CITIZEN_TABS;
+  const defaultTab = isAuthority ? "Alerts" : "Report Issue";
+  const currentTab = activeTab || defaultTab;
+
+  // ── Handle issue submission (citizen) ───────────────────────────────────
   async function handleSubmit(issueData) {
     try {
       await addIssue(issueData);
@@ -39,60 +78,96 @@ export default function App() {
     }
   }
 
-  // ── Loading State ─────────────────────────────────────────────────────────
+  // ── Handle logout ──────────────────────────────────────────────────────
+  async function handleLogout() {
+    try {
+      await logoutUser();
+      setActiveTab(null);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  }
+
+  // ── Data loading state ─────────────────────────────────────────────────
   if (loading) {
     return (
-      <div style={styles.centered}>
-        <div style={styles.spinner} />
-        <p style={{ color: "#01696f", marginTop: "1rem" }}>Loading CivicMitra…</p>
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
+        <Navbar
+          activeTab={currentTab}
+          onTabChange={setActiveTab}
+          tabs={tabs}
+          user={user}
+          onLogout={handleLogout}
+        />
+        <div style={styles.centered}>
+          <div style={styles.spinner} />
+          <p style={{ color: "#01696f", marginTop: "1rem" }}>Loading issues…</p>
+        </div>
       </div>
     );
   }
 
-  // ── Error State ───────────────────────────────────────────────────────────
+  // ── Firebase error state ──────────────────────────────────────────────
   if (error) {
     return (
-      <div style={styles.centered}>
-        <p style={{ color: "#c0392b", fontSize: "1rem" }}>
-          ❌ Firebase Error: {error}
-        </p>
-        <p style={{ color: "#555", fontSize: "0.85rem" }}>
-          Check your firebaseConfig.js credentials and DB rules.
-        </p>
+      <div style={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
+        <Navbar
+          activeTab={currentTab}
+          onTabChange={setActiveTab}
+          tabs={tabs}
+          user={user}
+          onLogout={handleLogout}
+        />
+        <div style={styles.centered}>
+          <p style={{ color: "#c0392b", fontSize: "1rem" }}>
+            ❌ Firebase Error: {error}
+          </p>
+          <p style={{ color: "#555", fontSize: "0.85rem" }}>
+            Check your firebaseConfig.js credentials and DB rules.
+          </p>
+        </div>
       </div>
     );
   }
 
-  // ── Main App ──────────────────────────────────────────────────────────────
+  // ── Main App ──────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
-
-      {/* Member 4's Navbar */}
-      <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navbar
+        activeTab={currentTab}
+        onTabChange={setActiveTab}
+        tabs={tabs}
+        user={user}
+        onLogout={handleLogout}
+      />
 
       <main style={{ padding: "1.25rem", maxWidth: "1100px", margin: "0 auto" }}>
 
-        {/* ← Member 1's component */}
-        // ← Member 1's component | SmartAssistant props: detectCategory, suggestDescription, findSimilarIssues
-{activeTab === "Report Issue" && (
-  <ReportForm
-    onSubmit={handleSubmit}
-    uploadImage={uploadImage}
-    detectCategory={detectCategory}
-    suggestDescription={suggestDescription}
-    findSimilarIssues={(lat, lng, cat) =>
-      findSimilarIssues(issues, lat, lng, cat)
-    }
-  />
-)}
+        {/* ← Citizen: Report Form */}
+        {!isAuthority && currentTab === "Report Issue" && (
+          <ReportForm
+            onSubmit={handleSubmit}
+            uploadImage={uploadImage}
+            detectCategory={detectCategory}
+            suggestDescription={suggestDescription}
+            findSimilarIssues={(lat, lng, cat) =>
+              findSimilarIssues(issues, lat, lng, cat)
+            }
+          />
+        )}
 
-        {/* ← Member 2's component */}
-        {activeTab === "Live Map" && (
+        {/* ← Authority: Alerts Panel */}
+        {isAuthority && currentTab === "Alerts" && (
+          <AuthorityPanel issues={issues} />
+        )}
+
+        {/* ← Shared: Live Map */}
+        {currentTab === "Live Map" && (
           <IssueMap issues={issues} />
         )}
 
-        {/* ← Member 3's component */}
-        {activeTab === "Dashboard" && (
+        {/* ← Shared: Dashboard */}
+        {currentTab === "Dashboard" && (
           <Dashboard issues={issues} onUpvote={upvoteIssue} />
         )}
 
@@ -108,7 +183,7 @@ const styles = {
     flexDirection:   "column",
     justifyContent:  "center",
     alignItems:      "center",
-    height:          "100vh",
+    height:          "80vh",
     backgroundColor: "#f4f6f8",
   },
   spinner: {

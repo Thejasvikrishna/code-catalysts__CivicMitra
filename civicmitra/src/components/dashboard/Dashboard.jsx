@@ -1,4 +1,7 @@
-import React, { useMemo, useState, useEffect } from "react";
+// Dashboard.jsx — Member 3 | KPI cards, charts, issue feed
+// Props: issues (Array from useIssues), onUpvote (function from App.jsx)
+
+import React, { useMemo } from "react";
 import IssueCard from "./IssueCard";
 import "./dashboard.css";
 
@@ -13,204 +16,198 @@ import {
   BarElement,
 } from "chart.js";
 
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement
-);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-// Animated Counter Hook
-const useCounter = (value) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    let start = 0;
-    const duration = 500;
-    const step = value / (duration / 20);
-
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= value) {
-        setCount(value);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(start));
-      }
-    }, 20);
-
-    return () => clearInterval(timer);
-  }, [value]);
-
-  return count;
+// ── Category config (matches spec colors) ────────────────────────────────
+const CATEGORIES = ["Roads", "Water", "Electricity", "Sanitation", "Parks", "Other"];
+const CAT_COLORS = {
+  Roads:       "#e67e22",
+  Water:       "#2980b9",
+  Electricity: "#f1c40f",
+  Sanitation:  "#27ae60",
+  Parks:       "#16a085",
+  Other:       "#8e44ad",
 };
 
-function Dashboard({ issues = [], onUpvote }) {
-  const [darkMode, setDarkMode] = useState(false);
+// ── Chart options ─────────────────────────────────────────────────────────
+const DOUGHNUT_OPTS = {
+  maintainAspectRatio: true,
+  plugins: { legend: { position: "bottom", labels: { font: { size: 11 }, padding: 10 } } },
+};
+const BAR_OPTS = {
+  maintainAspectRatio: true,
+  plugins: { legend: { position: "bottom", labels: { font: { size: 11 } } } },
+  scales: { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+};
 
-  // 🌙 Apply dark mode to FULL PAGE
-  useEffect(() => {
-    document.body.classList.toggle("dark-mode", darkMode);
-  }, [darkMode]);
+export default function Dashboard({ issues = [], onUpvote }) {
+  // Only use issues with a valid known category
+  const data = useMemo(
+    () => issues.filter((i) => i && i.category && CATEGORIES.includes(i.category)),
+    [issues]
+  );
 
-  // Mock data (only if no backend yet)
-  const mockIssues = [
-    {
-      id: "1",
-      title: "Garbage overflow",
-      category: "Sanitation",
-      status: "in_progress",
-      upvotes: 8,
-      createdAt: Date.now(),
-      timeline: [],
-      imageUrl: "",
-    },
-    {
-      id: "2",
-      title: "Pothole near MG Road",
-      category: "Roads",
-      status: "open",
-      upvotes: 5,
-      createdAt: Date.now(),
-      timeline: [],
-      imageUrl: "",
-    },
-    {
-      id: "3",
-      title: "Streetlight not working",
-      category: "Electricity",
-      status: "resolved",
-      upvotes: 2,
-      createdAt: Date.now(),
-      timeline: [],
-      imageUrl: "",
-    },
-  ];
-
-  const data = issues.length ? issues : mockIssues;
-
-  // KPIs
-  const total = data.length;
-  const open = data.filter((i) => i.status === "open").length;
+  // ── KPIs ────────────────────────────────────────────────────────────────
+  const total    = issues.length; // show total even if category is unknown
+  const open     = data.filter((i) => i.status === "open").length;
+  const inProg   = data.filter((i) => i.status === "in_progress").length;
   const resolved = data.filter((i) => i.status === "resolved").length;
 
-  const totalCount = useCounter(total);
-  const openCount = useCounter(open);
-  const resolvedCount = useCounter(resolved);
-
-  // Charts
-  const categoryCounts = useMemo(() => {
+  // ── Chart data ───────────────────────────────────────────────────────────
+  const catCounts = useMemo(() => {
     const counts = {};
-    data.forEach((i) => {
-      counts[i.category] = (counts[i.category] || 0) + 1;
-    });
-    return counts;
+    CATEGORIES.forEach((c) => { counts[c] = 0; });
+    data.forEach((i) => { counts[i.category] = (counts[i.category] || 0) + 1; });
+    // Only keep categories with at least 1 issue
+    return Object.fromEntries(Object.entries(counts).filter(([, v]) => v > 0));
   }, [data]);
 
+  const labels = Object.keys(catCounts);
+
   const doughnutData = {
-    labels: Object.keys(categoryCounts),
-    datasets: [
-      {
-        data: Object.values(categoryCounts),
-        backgroundColor: [
-          "#3498db",
-          "#e67e22",
-          "#2ecc71",
-          "#9b59b6",
-          "#f1c40f",
-        ],
-      },
-    ],
+    labels,
+    datasets: [{
+      data: labels.map((c) => catCounts[c]),
+      backgroundColor: labels.map((c) => CAT_COLORS[c] || "#8e44ad"),
+      borderWidth: 2,
+      borderColor: "#fff",
+    }],
   };
 
   const barData = {
-    labels: Object.keys(categoryCounts),
+    labels,
     datasets: [
       {
         label: "Open",
-        data: Object.keys(categoryCounts).map(
-          (cat) =>
-            data.filter((i) => i.category === cat && i.status === "open").length
-        ),
+        data: labels.map((c) => data.filter((i) => i.category === c && i.status === "open").length),
         backgroundColor: "#e67e22",
+        borderRadius: 4,
+      },
+      {
+        label: "In Progress",
+        data: labels.map((c) => data.filter((i) => i.category === c && i.status === "in_progress").length),
+        backgroundColor: "#2980b9",
+        borderRadius: 4,
       },
       {
         label: "Resolved",
-        data: Object.keys(categoryCounts).map(
-          (cat) =>
-            data.filter((i) => i.category === cat && i.status === "resolved")
-              .length
-        ),
+        data: labels.map((c) => data.filter((i) => i.category === c && i.status === "resolved").length),
         backgroundColor: "#27ae60",
+        borderRadius: 4,
       },
     ],
   };
 
-  // 🔥 Most Upvoted Logic
-  const topIssues = [...data]
-    .sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))
-    .slice(0, 3);
+  // ── Most Upvoted ─────────────────────────────────────────────────────────
+  const topIssues = useMemo(
+    () => [...issues].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0)).slice(0, 3),
+    [issues]
+  );
+  const showTop = topIssues.some((i) => (i.upvotes || 0) > 0);
 
-  const showTop = topIssues.some((i) => i.upvotes > 0);
+  // ── Latest Issues (newest first, already sorted by useIssues) ───────────
+  const latestIssues = useMemo(() => issues.slice(0, 20), [issues]);
+
+  // ── Empty State ──────────────────────────────────────────────────────────
+  if (issues.length === 0) {
+    return (
+      <div className="dashboard">
+        <div className="dash-header">
+          <h1 className="dash-title">📊 Dashboard</h1>
+        </div>
+        <div className="dash-empty">
+          <span className="empty-icon">📋</span>
+          <p className="empty-title">No issues yet</p>
+          <p className="empty-sub">Reports submitted by citizens will appear here.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
-      <button className="dark-btn" onClick={() => setDarkMode(!darkMode)}>
-        {darkMode ? "☀ Light Mode" : "🌙 Dark Mode"}
-      </button>
+      {/* Header */}
+      <div className="dash-header">
+        <h1 className="dash-title">📊 Dashboard</h1>
+        <p className="dash-sub">Real-time civic issue analytics</p>
+      </div>
 
-      <h1>Dashboard</h1>
-
-      {/* KPI */}
+      {/* ── KPI Cards ───────────────────────────────────────────────────── */}
       <div className="kpi-container">
-        <div className="kpi-card">Total: {totalCount}</div>
-        <div className="kpi-card">Open: {openCount}</div>
-        <div className="kpi-card">Resolved: {resolvedCount}</div>
+        <div className="kpi-card kpi-total">
+          <span className="kpi-icon">📋</span>
+          <span className="kpi-number">{total}</span>
+          <span className="kpi-label">Total Issues</span>
+        </div>
+        <div className="kpi-card kpi-open">
+          <span className="kpi-icon">🟠</span>
+          <span className="kpi-number">{open}</span>
+          <span className="kpi-label">Open</span>
+        </div>
+        <div className="kpi-card kpi-prog">
+          <span className="kpi-icon">🔵</span>
+          <span className="kpi-number">{inProg}</span>
+          <span className="kpi-label">In Progress</span>
+        </div>
+        <div className="kpi-card kpi-resolved">
+          <span className="kpi-icon">✅</span>
+          <span className="kpi-number">{resolved}</span>
+          <span className="kpi-label">Resolved</span>
+        </div>
       </div>
 
-      {/* Charts */}
-      <div className="chart-row">
-        <div className="chart-small">
-          <Doughnut data={doughnutData} />
+      {/* ── Charts (only if we have categorised data) ────────────────────── */}
+      {labels.length > 0 && (
+        <div className="chart-row">
+          <div className="chart-card">
+            <h3 className="chart-title">Issues by Category</h3>
+            <div className="chart-inner">
+              <Doughnut data={doughnutData} options={DOUGHNUT_OPTS} />
+            </div>
+          </div>
+          <div className="chart-card">
+            <h3 className="chart-title">Status by Category</h3>
+            <div className="chart-inner">
+              <Bar data={barData} options={BAR_OPTS} />
+            </div>
+          </div>
         </div>
-        <div className="chart-small">
-          <Bar data={barData} />
-        </div>
-      </div>
+      )}
 
-      {/* 🔥 Most Upvoted */}
+      {/* ── Most Upvoted ────────────────────────────────────────────────── */}
       {showTop && (
-        <>
-          <h2>🔥 Most Upvoted Issues</h2>
+        <section>
+          <h2 className="section-title">🔥 Most Upvoted</h2>
           <div className="issue-list">
-            {topIssues.map((issue, index) => (
+            {topIssues.map((issue, idx) => (
               <IssueCard
                 key={issue.id}
                 issue={issue}
                 onUpvote={onUpvote}
-                highlight
-                rank={index + 1}
+                rank={idx + 1}
               />
             ))}
           </div>
-        </>
+        </section>
       )}
 
-      {/* All Issues */}
-      <h2>All Issues</h2>
-      <div className="issue-list">
-        {data.map((issue) => (
-          <IssueCard
-            key={issue.id}
-            issue={issue}
-            onUpvote={onUpvote}
-          />
-        ))}
-      </div>
+      {/* ── Latest Issues ───────────────────────────────────────────────── */}
+      <section>
+        <h2 className="section-title">🕐 Latest Issues</h2>
+        {latestIssues.length === 0 ? (
+          <p className="no-issues-text">No issues to show.</p>
+        ) : (
+          <div className="issue-list">
+            {latestIssues.map((issue) => (
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onUpvote={onUpvote}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
-
-export default Dashboard;
