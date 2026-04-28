@@ -1,6 +1,6 @@
 .dashboard {
   padding: 30px;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI';
   background: linear-gradient(135deg, #eef2f7, #f8fbff);
   min-height: 100vh;
   max-width: 1000px;
@@ -25,6 +25,7 @@
   cursor: pointer;
 }
 
+/* KPI */
 .kpi-container {
   display: flex;
   gap: 15px;
@@ -36,10 +37,11 @@
   background: white;
   padding: 18px;
   border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-  transition: 0.3s;
+  text-align: center;
+  font-weight: bold;
 }
 
+/* Charts */
 .chart-row {
   display: flex;
   gap: 20px;
@@ -53,6 +55,7 @@
   border-radius: 12px;
 }
 
+/* Issues */
 .issue-list {
   display: flex;
   flex-direction: column;
@@ -63,19 +66,29 @@
   background: white;
   padding: 15px;
   border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-  transition: 0.3s;
 }
 
-.issue-card:hover {
-  transform: translateY(-5px);
+/* 🔔 Notification */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #e74c3c;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
 }
 
-.issue-card {
-  animation: fadeIn 0.4s ease;
+/* ⏳ Skeleton */
+.skeleton {
+  height: 200px;
+  background: #ddd;
+  border-radius: 12px;
+  animation: pulse 1.2s infinite;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
 }
