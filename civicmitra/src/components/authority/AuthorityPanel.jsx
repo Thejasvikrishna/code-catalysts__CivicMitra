@@ -206,10 +206,22 @@ export default function AuthorityPanel({ issues = [] }) {
                     src={issue.imageUrl}
                     alt={`Photo of ${issue.title}`}
                     className="issue-thumb"
-                    style={{ cursor: "zoom-in" }}
+                    style={{ cursor: "zoom-in", marginBottom: "0.4rem" }}
                     title="Click to enlarge"
                     onClick={() => openLightbox(issue.imageUrl, `Photo of ${issue.title}`)}
                   />
+                )}
+
+                {/* Google Maps link */}
+                {issue.lat && issue.lng && (
+                  <a
+                    href={`https://www.google.com/maps?q=${issue.lat},${issue.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="maps-link"
+                  >
+                    📍 View location on Google Maps ↗
+                  </a>
                 )}
 
                 {/* Upvotes & Location */}

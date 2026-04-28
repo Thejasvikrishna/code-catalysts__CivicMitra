@@ -6,7 +6,7 @@
 // Get from: Cloudinary Console → Settings → Upload → Upload Presets
 // uploadImage.js
 const CLOUD_NAME    = "";          // ✅ Visible on your dashboard
-const UPLOAD_PRESET = "civicmitra_unsigned"; // ← Set this after Step 4 above
+const UPLOAD_PRESET = ""; // ← Set this after Step 4 above
 
 export async function uploadImage(file) {
   if (!file) throw new Error("uploadImage: No file provided.");
