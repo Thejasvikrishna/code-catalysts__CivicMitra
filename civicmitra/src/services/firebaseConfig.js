@@ -7,9 +7,9 @@ import { getDatabase } from "firebase/database";
 // 🔑 Paste your Firebase credentials here
 // Get these from: Firebase Console → Project Settings → Your Apps → SDK Setup
 const firebaseConfig = {
-  apiKey: "AIzaSyCwj7OB0FOFtvhvD4-fejn6KYcbL7CtL6Y",
+  apiKey: "",
   authDomain: "civicmitra-b04d5.firebaseapp.com",
-  databaseURL:       "https://civicmitra-b04d5-default-rtdb.firebaseio.com/",
+  databaseURL:       "",
   projectId: "civicmitra-b04d5",
   storageBucket: "civicmitra-b04d5.firebasestorage.app",
   messagingSenderId: "164795109812",
