@@ -17,7 +17,7 @@ function FeaturePage() {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>CivicMitra 🚧</h1>
+      <h1>CivicMitra </h1>
 
       <h2>Report an Issue</h2>
 
