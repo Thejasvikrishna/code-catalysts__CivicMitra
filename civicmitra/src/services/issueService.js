@@ -15,7 +15,7 @@ import {
 
 // ─── addIssue ────────────────────────────────────────────────────────────────
 // Called by App.jsx handleSubmit, which receives issueData from Member 1's ReportForm
-// issueData = { title, description, category, imageUrl, audioText, lat, lng }
+// issueData = { title, description, category, imageUrl, audioText, lat, lng, submittedBy }
 export async function addIssue(issueData) {
   const issuesRef = ref(db, "issues");
   const newRef    = push(issuesRef); // Generates unique key
@@ -33,6 +33,8 @@ export async function addIssue(issueData) {
     upvotes:     0,
     status:      "open",
     createdAt:   timestamp,
+    // Submitter identity
+    submittedBy: issueData.submittedBy || "Anonymous",
     // Initial timeline entry — Member 3's StatusTimeline reads this array
     timeline: [
       {
@@ -61,15 +63,25 @@ export async function upvoteIssue(issueId) {
 // ─── updateStatus ─────────────────────────────────────────────────────────────
 // Optional: Admin/demo use. Appends a timeline entry and updates status field.
 // Member 3's StatusTimeline can display these entries.
-export async function updateStatus(issueId, newStatus, note = "") {
+// Extra fields: resolvedImageUrl (string URL), comment (string) for resolved entries.
+export async function updateStatus(issueId, newStatus, note = "", resolvedImageUrl = "", comment = "") {
   const timelineRef    = ref(db, `issues/${issueId}/timeline`);
   const newEntryRef    = push(timelineRef); // Appends to timeline array in DB
   const timestamp      = Date.now();
 
-  // Write new timeline entry
-  await set(newEntryRef, { status: newStatus, note, timestamp });
+  // Write new timeline entry (include resolvedImageUrl + comment if provided)
+  await set(newEntryRef, {
+    status: newStatus,
+    note,
+    timestamp,
+    ...(resolvedImageUrl ? { resolvedImageUrl } : {}),
+    ...(comment        ? { comment }          : {}),
+  });
 
-  // Update top-level status field
+  // Update top-level status field (and store resolvedImageUrl at issue level for quick access)
   const issueRef = ref(db, `issues/${issueId}`);
-  await update(issueRef, { status: newStatus });
+  await update(issueRef, {
+    status: newStatus,
+    ...(resolvedImageUrl ? { resolvedImageUrl } : {}),
+  });
 }
