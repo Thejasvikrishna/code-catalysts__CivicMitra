@@ -17,7 +17,6 @@
 - [ ] M3: Build Dashboard with mock data
 
 ---
----
 
 ## Update 2 — Core Module Development
 **Date:** April 28, 2026
