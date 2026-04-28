@@ -1,0 +1,13 @@
+{
+  "title": "Report Issue",
+  "description": "Description",
+  "category": "Category",
+  "submit": "Submit",
+  "upload": "Upload Photo",
+  "voice": "Voice Input",
+  "start": "Start",
+  "stop": "Stop",
+  "success": "Issue submitted successfully",
+  "error": "Something went wrong",
+  "selectCategory": "Select category"
+}
