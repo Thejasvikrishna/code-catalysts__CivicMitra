@@ -1,5 +1,6 @@
 import L from "leaflet";
 
+// ===== CATEGORY COLORS =====
 export const CATEGORY_COLORS = {
   Roads: "#e67e22",
   Water: "#2980b9",
@@ -9,12 +10,14 @@ export const CATEGORY_COLORS = {
   Other: "#8e44ad",
 };
 
+// ===== STATUS LABELS =====
 export const STATUS_LABELS = {
   open: "Open",
   in_progress: "In Progress",
   resolved: "Resolved",
 };
 
+// ===== CREATE CUSTOM MARKER =====
 export const createMarkerIcon = (category = "Other") => {
   const color = CATEGORY_COLORS[category] || CATEGORY_COLORS.Other;
 
@@ -30,5 +33,6 @@ export const createMarkerIcon = (category = "Other") => {
     className: "",
     iconSize: [30, 40],
     iconAnchor: [15, 40],
+    popupAnchor: [0, -35],
   });
 };
