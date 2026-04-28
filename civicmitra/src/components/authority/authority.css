@@ -190,6 +190,23 @@
   margin-bottom: 0.75rem;
 }
 
+/* Google Maps link */
+.maps-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #2980b9;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 0.65rem;
+  transition: color 0.2s;
+}
+.maps-link:hover {
+  color: #1a5f8a;
+  text-decoration: underline;
+}
+
 /* ── Actions ─────────────────────────────────────────────────────────────── */
 .issue-actions {
   border-top: 1px solid #f0f0f0;

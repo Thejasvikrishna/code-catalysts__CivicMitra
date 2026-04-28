@@ -146,11 +146,32 @@ export default function IssueCard({ issue, onUpvote, rank }) {
             onClick={() => openLightbox(issue.imageUrl, `Photo of ${issue.title || "issue"}`)}
             style={{
               width: "100%", height: "150px", objectFit: "cover",
-              borderRadius: 10, marginBottom: "0.75rem",
+              borderRadius: 10, marginBottom: "0.4rem",
               cursor: "zoom-in",
             }}
             title="Click to enlarge"
           />
+        )}
+
+        {/* Google Maps link */}
+        {issue.lat && issue.lng && (
+          <a
+            href={`https://www.google.com/maps?q=${issue.lat},${issue.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.3rem",
+              fontSize: "0.78rem",
+              color: "#2980b9",
+              fontWeight: 600,
+              marginBottom: "0.65rem",
+              textDecoration: "none",
+            }}
+          >
+            📍 View location on Google Maps ↗
+          </a>
         )}
 
         {/* Actions */}

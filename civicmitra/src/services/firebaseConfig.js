@@ -12,8 +12,8 @@ const firebaseConfig = {
   databaseURL:       "",
   projectId: "",
   storageBucket: "",
-  messagingSenderId: "164795109812",
-  appId: "1:164795109812:web:32f14367fb5c676b94e2e1"
+  messagingSenderId: "",
+  appId: ""
 };
 
 const app = initializeApp(firebaseConfig);
