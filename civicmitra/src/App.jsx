@@ -73,19 +73,18 @@ export default function App() {
       <main style={{ padding: "1.25rem", maxWidth: "1100px", margin: "0 auto" }}>
 
         {/* ← Member 1's component */}
-        {activeTab === "Report Issue" && (
-          <ReportForm
-            onSubmit={handleSubmit}
-            uploadImage={uploadImage}
-            {/* ← SmartAssistant props — Member 1 destructures these in ReportForm */}
-            detectCategory={detectCategory}
-            suggestDescription={suggestDescription}
-            findSimilarIssues={(lat, lng, cat) =>
-              findSimilarIssues(issues, lat, lng, cat)
-              // 'issues' is closed over from useIssues() above — always fresh
-            }
-          />
-        )}
+        // ← Member 1's component | SmartAssistant props: detectCategory, suggestDescription, findSimilarIssues
+{activeTab === "Report Issue" && (
+  <ReportForm
+    onSubmit={handleSubmit}
+    uploadImage={uploadImage}
+    detectCategory={detectCategory}
+    suggestDescription={suggestDescription}
+    findSimilarIssues={(lat, lng, cat) =>
+      findSimilarIssues(issues, lat, lng, cat)
+    }
+  />
+)}
 
         {/* ← Member 2's component */}
         {activeTab === "Live Map" && (
