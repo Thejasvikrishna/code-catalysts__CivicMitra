@@ -37,3 +37,4 @@ button:hover {
 p {
   font-weight: bold;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
