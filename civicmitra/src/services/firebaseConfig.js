@@ -8,9 +8,9 @@ import { getAuth } from "firebase/auth";
 // 🔑 Firebase credentials
 const firebaseConfig = {
   apiKey: "",
-  authDomain: "civicmitra-b04d5.firebaseapp.com",
+  authDomain: "",
   databaseURL:       "",
-  projectId: "civicmitra-b04d5",
+  projectId: "",
   storageBucket: "",
   messagingSenderId: "164795109812",
   appId: "1:164795109812:web:32f14367fb5c676b94e2e1"

@@ -1,7 +1,9 @@
 // AuthorityPanel.jsx — Authority/Admin issue management panel
-// Receives alerts for new issues, can update status and add notes
-import React, { useState, useMemo } from "react";
+// Receives alerts for new issues, can update status, add notes, and upload resolution images.
+import React, { useState, useMemo, useRef } from "react";
 import { updateStatus } from "../../services/issueService";
+import { uploadImage }  from "../../services/uploadImage";
+import ImageLightbox    from "../shared/ImageLightbox";
 import "./authority.css";
 
 const STATUS_FLOW = ["open", "in_progress", "resolved"];
@@ -16,45 +18,90 @@ const STATUS_COLORS = {
   resolved: "#27ae60",
 };
 const CATEGORY_COLORS = {
-  Roads: "#e67e22",
-  Water: "#2980b9",
+  Roads:       "#e67e22",
+  Water:       "#2980b9",
   Electricity: "#f1c40f",
-  Sanitation: "#27ae60",
-  Parks: "#16a085",
-  Other: "#8e44ad",
+  Sanitation:  "#27ae60",
+  Parks:       "#16a085",
+  Other:       "#8e44ad",
 };
 
 export default function AuthorityPanel({ issues = [] }) {
-  const [filter, setFilter] = useState("all"); // all | open | in_progress | resolved
-  const [noteInputs, setNoteInputs] = useState({});    // {issueId: note}
-  const [expanding, setExpanding] = useState({});       // {issueId: bool}
-  const [updating, setUpdating] = useState({});         // {issueId: bool}
+  const [filter, setFilter]         = useState("all");
+  const [noteInputs, setNoteInputs] = useState({});
+  const [comments, setComments]     = useState({});
+  const [expanding, setExpanding]   = useState({});
+  const [updating, setUpdating]     = useState({});
 
-  // Count alerts (open issues needing attention)
-  const alertCount = issues.filter((i) => i.status === "open").length;
-  const inProgCount = issues.filter((i) => i.status === "in_progress").length;
+  // Lightbox state
+  const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [lightboxAlt, setLightboxAlt] = useState("");
+  const openLightbox  = (src, alt) => { setLightboxSrc(src); setLightboxAlt(alt || ""); };
+  const closeLightbox = () => setLightboxSrc(null);
+
+  // Resolved image state per issue: { preview, file, uploading, url }
+  const [resolvedImages, setResolvedImages] = useState({});
+  const fileInputRefs = useRef({});
+
+  // Counts
+  const alertCount    = issues.filter((i) => i.status === "open").length;
+  const inProgCount   = issues.filter((i) => i.status === "in_progress").length;
   const resolvedCount = issues.filter((i) => i.status === "resolved").length;
 
-  // Filtered list
   const filtered = useMemo(() => {
     if (filter === "all") return issues;
     return issues.filter((i) => i.status === filter);
   }, [issues, filter]);
 
-  // Get next status in the flow
   const getNextStatus = (current) => {
     const idx = STATUS_FLOW.indexOf(current);
     return idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
   };
 
-  // Handle status update
+  const handleImagePick = (issueId, file) => {
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setResolvedImages((prev) => ({
+      ...prev,
+      [issueId]: { file, preview, uploading: false, url: "" },
+    }));
+  };
+
   const handleStatusUpdate = async (issueId, newStatus) => {
-    const note = noteInputs[issueId] || "";
+    const note    = noteInputs[issueId] || "";
+    const comment = comments[issueId]   || "";
     setUpdating((prev) => ({ ...prev, [issueId]: true }));
     try {
-      await updateStatus(issueId, newStatus, note || `Status changed to ${newStatus}`);
-      setNoteInputs((prev) => ({ ...prev, [issueId]: "" }));
-      setExpanding((prev) => ({ ...prev, [issueId]: false }));
+      let resolvedImageUrl = "";
+      const imgState = resolvedImages[issueId];
+      if (newStatus === "resolved" && imgState?.file) {
+        setResolvedImages((prev) => ({
+          ...prev,
+          [issueId]: { ...prev[issueId], uploading: true },
+        }));
+        resolvedImageUrl = await uploadImage(imgState.file);
+        setResolvedImages((prev) => ({
+          ...prev,
+          [issueId]: { ...prev[issueId], uploading: false, url: resolvedImageUrl },
+        }));
+      }
+
+      await updateStatus(
+        issueId,
+        newStatus,
+        note || `Status changed to ${newStatus}`,
+        resolvedImageUrl,
+        comment
+      );
+
+      setNoteInputs((prev)     => ({ ...prev, [issueId]: "" }));
+      setComments((prev)       => ({ ...prev, [issueId]: "" }));
+      setExpanding((prev)      => ({ ...prev, [issueId]: false }));
+      setResolvedImages((prev) => {
+        const next = { ...prev };
+        delete next[issueId];
+        return next;
+      });
     } catch (err) {
       alert("Update failed: " + err.message);
     } finally {
@@ -62,7 +109,6 @@ export default function AuthorityPanel({ issues = [] }) {
     }
   };
 
-  // Time ago helper
   const timeAgo = (ts) => {
     const diff = Date.now() - ts;
     const mins = Math.floor(diff / 60000);
@@ -70,12 +116,16 @@ export default function AuthorityPanel({ issues = [] }) {
     if (mins < 60) return `${mins}m ago`;
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days}d ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   };
 
   return (
     <div className="authority-panel">
+      {/* ── Lightbox ── */}
+      {lightboxSrc && (
+        <ImageLightbox src={lightboxSrc} alt={lightboxAlt} onClose={closeLightbox} />
+      )}
+
       {/* Alert Banner */}
       <div className="authority-alert-banner">
         <div className="alert-icon">🔔</div>
@@ -87,28 +137,16 @@ export default function AuthorityPanel({ issues = [] }) {
 
       {/* Stats bar */}
       <div className="authority-stats">
-        <div
-          className={`stat-chip ${filter === "all" ? "active" : ""}`}
-          onClick={() => setFilter("all")}
-        >
+        <div className={`stat-chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>
           📋 All <strong>{issues.length}</strong>
         </div>
-        <div
-          className={`stat-chip open ${filter === "open" ? "active" : ""}`}
-          onClick={() => setFilter("open")}
-        >
+        <div className={`stat-chip open ${filter === "open" ? "active" : ""}`} onClick={() => setFilter("open")}>
           🟠 Open <strong>{alertCount}</strong>
         </div>
-        <div
-          className={`stat-chip in-prog ${filter === "in_progress" ? "active" : ""}`}
-          onClick={() => setFilter("in_progress")}
-        >
+        <div className={`stat-chip in-prog ${filter === "in_progress" ? "active" : ""}`} onClick={() => setFilter("in_progress")}>
           🔵 In Progress <strong>{inProgCount}</strong>
         </div>
-        <div
-          className={`stat-chip resolved ${filter === "resolved" ? "active" : ""}`}
-          onClick={() => setFilter("resolved")}
-        >
+        <div className={`stat-chip resolved ${filter === "resolved" ? "active" : ""}`} onClick={() => setFilter("resolved")}>
           🟢 Resolved <strong>{resolvedCount}</strong>
         </div>
       </div>
@@ -123,7 +161,8 @@ export default function AuthorityPanel({ issues = [] }) {
         <div className="authority-issue-list">
           {filtered.map((issue) => {
             const nextStatus = getNextStatus(issue.status);
-            const isOpen = expanding[issue.id];
+            const isOpen     = expanding[issue.id];
+            const imgState   = resolvedImages[issue.id];
 
             return (
               <article key={issue.id} className="authority-issue-card">
@@ -151,12 +190,25 @@ export default function AuthorityPanel({ issues = [] }) {
                   <p className="issue-desc">{issue.description}</p>
                 )}
 
-                {/* Image thumbnail */}
+                {/* Submitter username */}
+                {issue.submittedBy && (
+                  <div className="issue-submitter">
+                    <span className="submitter-icon">👤</span>
+                    <span className="submitter-name">
+                      Submitted by <strong>{issue.submittedBy}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {/* Report photo — click to enlarge */}
                 {issue.imageUrl && (
                   <img
                     src={issue.imageUrl}
                     alt={`Photo of ${issue.title}`}
                     className="issue-thumb"
+                    style={{ cursor: "zoom-in" }}
+                    title="Click to enlarge"
+                    onClick={() => openLightbox(issue.imageUrl, `Photo of ${issue.title}`)}
                   />
                 )}
 
@@ -172,10 +224,7 @@ export default function AuthorityPanel({ issues = [] }) {
                     <button
                       className="action-toggle"
                       onClick={() =>
-                        setExpanding((prev) => ({
-                          ...prev,
-                          [issue.id]: !prev[issue.id],
-                        }))
+                        setExpanding((prev) => ({ ...prev, [issue.id]: !prev[issue.id] }))
                       }
                     >
                       {isOpen ? "Cancel" : `Move to ${STATUS_LABELS[nextStatus]}`}
@@ -183,24 +232,80 @@ export default function AuthorityPanel({ issues = [] }) {
 
                     {isOpen && (
                       <div className="action-expand">
+                        {/* Note */}
                         <input
                           type="text"
-                          placeholder="Add a note (optional)..."
+                          placeholder="Add a short note (optional)..."
                           value={noteInputs[issue.id] || ""}
                           onChange={(e) =>
-                            setNoteInputs((prev) => ({
-                              ...prev,
-                              [issue.id]: e.target.value,
-                            }))
+                            setNoteInputs((prev) => ({ ...prev, [issue.id]: e.target.value }))
                           }
                           className="action-note-input"
                         />
+
+                        {/* Authority comment */}
+                        <textarea
+                          placeholder="Authority comment (shown to citizens)..."
+                          value={comments[issue.id] || ""}
+                          onChange={(e) =>
+                            setComments((prev) => ({ ...prev, [issue.id]: e.target.value }))
+                          }
+                          className="action-comment-input"
+                          rows={3}
+                        />
+
+                        {/* Resolution image upload */}
+                        {nextStatus === "resolved" && (
+                          <div className="action-image-upload">
+                            <label className="upload-label" htmlFor={`resolved-img-${issue.id}`}>
+                              📷 {imgState?.preview ? "Change resolution image" : "Upload resolution image (optional)"}
+                            </label>
+                            <input
+                              id={`resolved-img-${issue.id}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              ref={(el) => { fileInputRefs.current[issue.id] = el; }}
+                              onChange={(e) => handleImagePick(issue.id, e.target.files[0])}
+                            />
+                            {imgState?.preview && (
+                              <div className="upload-preview-wrap">
+                                {/* Preview — click to see full size */}
+                                <img
+                                  src={imgState.preview}
+                                  alt="Resolution preview"
+                                  className="upload-preview"
+                                  style={{ cursor: "zoom-in" }}
+                                  title="Click to enlarge"
+                                  onClick={() =>
+                                    openLightbox(imgState.preview, "Resolution image preview")
+                                  }
+                                />
+                                <button
+                                  className="remove-preview-btn"
+                                  onClick={() =>
+                                    setResolvedImages((prev) => {
+                                      const next = { ...prev };
+                                      delete next[issue.id];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  ✕ Remove
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <button
                           className="action-confirm"
-                          disabled={updating[issue.id]}
+                          disabled={updating[issue.id] || imgState?.uploading}
                           onClick={() => handleStatusUpdate(issue.id, nextStatus)}
                         >
-                          {updating[issue.id]
+                          {imgState?.uploading
+                            ? "Uploading image…"
+                            : updating[issue.id]
                             ? "Updating…"
                             : `✓ Confirm ${STATUS_LABELS[nextStatus]}`}
                         </button>
@@ -208,8 +313,23 @@ export default function AuthorityPanel({ issues = [] }) {
                     )}
                   </div>
                 ) : (
+                  /* Resolved card — show resolved image, click to enlarge */
                   <div className="issue-resolved-badge">
                     ✅ This issue has been resolved
+                    {issue.resolvedImageUrl && (
+                      <div className="resolved-image-wrap">
+                        <img
+                          src={issue.resolvedImageUrl}
+                          alt="Resolution proof"
+                          className="resolved-thumb"
+                          style={{ cursor: "zoom-in" }}
+                          title="Click to enlarge"
+                          onClick={() =>
+                            openLightbox(issue.resolvedImageUrl, "Resolution proof")
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </article>

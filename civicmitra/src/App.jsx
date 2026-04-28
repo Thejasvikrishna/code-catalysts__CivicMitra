@@ -70,7 +70,10 @@ export default function App() {
   // ── Handle issue submission (citizen) ───────────────────────────────────
   async function handleSubmit(issueData) {
     try {
-      await addIssue(issueData);
+      await addIssue({
+        ...issueData,
+        submittedBy: user?.displayName || user?.email || "Anonymous",
+      });
       setActiveTab("Live Map");
     } catch (err) {
       console.error("Failed to submit issue:", err);
