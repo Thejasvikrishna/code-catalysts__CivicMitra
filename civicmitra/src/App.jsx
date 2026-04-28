@@ -1,17 +1,21 @@
-// App.jsx — Member 4 | Integration Hub
+// App.jsx — Member 4 | Integration Hub (updated: SmartAssistant wired in)
 // Wires all 4 members' components together.
-// Owns: state (activeTab), data (useIssues), service calls (addIssue, upvoteIssue)
-// Props flow DOWN — no component imports Firebase directly except Member 4's files.
 
 import "./i18n/i18n"; // ← Member 1's i18n side-effect import — MUST be first
 
 import React, { useState } from "react";
 
 // Member 4 internals
-import { useIssues }    from "./hooks/useIssues";
-import { addIssue, upvoteIssue } from "./services/issueService";
-import { uploadImage }  from "./services/uploadImage";
-import Navbar           from "./components/shared/Navbar";
+import { useIssues }                        from "./hooks/useIssues";
+import { addIssue, upvoteIssue }            from "./services/issueService";
+import { uploadImage }                      from "./services/uploadImage";
+// ← NEW: SmartAssistant functions
+import {
+  detectCategory,
+  suggestDescription,
+  findSimilarIssues,
+} from "./services/smartAssistant";
+import Navbar from "./components/shared/Navbar";
 
 // ← Member 1's component
 import ReportForm from "./components/form/ReportForm";
@@ -28,14 +32,14 @@ export default function App() {
   async function handleSubmit(issueData) {
     try {
       await addIssue(issueData);
-      setActiveTab("Live Map"); // Navigate to map after successful report
+      setActiveTab("Live Map");
     } catch (err) {
       console.error("Failed to submit issue:", err);
       alert(`Submission failed: ${err.message}`);
     }
   }
 
-  // ── Loading State ──────────────────────────────────────────────────────────
+  // ── Loading State ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={styles.centered}>
@@ -45,7 +49,7 @@ export default function App() {
     );
   }
 
-  // ── Error State ────────────────────────────────────────────────────────────
+  // ── Error State ───────────────────────────────────────────────────────────
   if (error) {
     return (
       <div style={styles.centered}>
@@ -59,33 +63,38 @@ export default function App() {
     );
   }
 
-  // ── Main App ───────────────────────────────────────────────────────────────
+  // ── Main App ──────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#f4f6f8" }}>
+
       {/* Member 4's Navbar */}
       <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <main style={{ padding: "1.25rem", maxWidth: "1100px", margin: "0 auto" }}>
 
-        {/* ← Member 1's component — receives onSubmit and uploadImage as props */}
+        {/* ← Member 1's component */}
         {activeTab === "Report Issue" && (
           <ReportForm
             onSubmit={handleSubmit}
             uploadImage={uploadImage}
+            {/* ← SmartAssistant props — Member 1 destructures these in ReportForm */}
+            detectCategory={detectCategory}
+            suggestDescription={suggestDescription}
+            findSimilarIssues={(lat, lng, cat) =>
+              findSimilarIssues(issues, lat, lng, cat)
+              // 'issues' is closed over from useIssues() above — always fresh
+            }
           />
         )}
 
-        {/* ← Member 2's component — receives live issues array as prop */}
+        {/* ← Member 2's component */}
         {activeTab === "Live Map" && (
           <IssueMap issues={issues} />
         )}
 
-        {/* ← Member 3's component — receives live issues array and upvote handler */}
+        {/* ← Member 3's component */}
         {activeTab === "Dashboard" && (
-          <Dashboard
-            issues={issues}
-            onUpvote={upvoteIssue}
-          />
+          <Dashboard issues={issues} onUpvote={upvoteIssue} />
         )}
 
       </main>
@@ -93,22 +102,22 @@ export default function App() {
   );
 }
 
-// ── Inline styles (App-level only) ──────────────────────────────────────────
+// ── Inline styles ─────────────────────────────────────────────────────────
 const styles = {
   centered: {
-    display:        "flex",
-    flexDirection:  "column",
-    justifyContent: "center",
-    alignItems:     "center",
-    height:         "100vh",
-    backgroundColor:"#f4f6f8",
+    display:         "flex",
+    flexDirection:   "column",
+    justifyContent:  "center",
+    alignItems:      "center",
+    height:          "100vh",
+    backgroundColor: "#f4f6f8",
   },
   spinner: {
-    width:       "40px",
-    height:      "40px",
-    border:      "4px solid #d0e8e9",
-    borderTop:   "4px solid #01696f",
-    borderRadius:"50%",
-    animation:   "spin 0.8s linear infinite",
+    width:        "40px",
+    height:       "40px",
+    border:       "4px solid #d0e8e9",
+    borderTop:    "4px solid #01696f",
+    borderRadius: "50%",
+    animation:    "spin 0.8s linear infinite",
   },
 };
