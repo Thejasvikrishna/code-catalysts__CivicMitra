@@ -32,3 +32,43 @@
 - [ ] M2: Refine IssueMap with mock data
 - [ ] M3: Build Dashboard with mock data
 - [ ] M4: Setup Firebase + Cloudinary
+---
+
+## Update 3 — Services & Category Setup
+**Date:** April 28, 2026
+
+### Done
+- M4 (Thejasvi): Added services (PR #4 merged)
+- M2 (Vishnu): Added category filters and services
+- M1 (Vinay): Added code in public folder
+
+### Next
+- [ ] M3: Complete Dashboard
+- [ ] M1: Finalize ReportForm
+
+---
+
+## Update 4 — Dashboard & Issue Reporting
+**Date:** April 28, 2026
+
+### Done
+- M3 (Sumith): Built Dashboard with analytics + most upvoted section
+- M3 (Sumith): Implemented issue reporting feature
+- M2 (Vishnu): Merged map and services to main
+
+### Next
+- [ ] M3: Add dark mode + notifications
+- [ ] M1: Complete form integration
+
+---
+
+## Update 5 — Dashboard Finalized
+**Date:** April 28, 2026
+
+### Done
+- M3 (Sumith): Final dashboard with notifications, animated counters, dark mode, and live updates (PR #5 merged)
+- M1 (Vinay): Added and merged remaining form code
+
+### Next
+- [ ] M4: Firebase + Cloudinary integration
+- [ ] All: Integration testing across modules

@@ -1,0 +1,94 @@
+.dashboard {
+  padding: 30px;
+  font-family: 'Segoe UI';
+  background: linear-gradient(135deg, #eef2f7, #f8fbff);
+  min-height: 100vh;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.dark {
+  background: #1e1e2f;
+  color: white;
+}
+
+.dark .issue-card,
+.dark .kpi-card {
+  background: #2c2c3e;
+}
+
+.dark-btn {
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+/* KPI */
+.kpi-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.kpi-card {
+  flex: 1;
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Charts */
+.chart-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.chart-small {
+  flex: 1;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+/* Issues */
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.issue-card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+/* 🔔 Notification */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #e74c3c;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+}
+
+/* ⏳ Skeleton */
+.skeleton {
+  height: 200px;
+  background: #ddd;
+  border-radius: 12px;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
