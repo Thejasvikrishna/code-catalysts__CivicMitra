@@ -1,67 +1,67 @@
 import React, { useState } from "react";
 import StatusTimeline from "./StatusTimeline";
+import "./dashboard.css";
 
 function IssueCard({ issue, onUpvote, rank }) {
-  const [open, setOpen] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(false);
 
-  // Medal icons for top issues
-  const medals = ["🥇", "🥈", "🥉"];
+  const rankEmoji = ["🥇", "🥈", "🥉"];
 
   return (
     <article
       className="issue-card"
       style={rank !== undefined ? { borderLeft: "4px solid #f1c40f" } : {}}
     >
-      {/* Rank badge (top-left) */}
       {rank !== undefined && (
-        <div className="rank-badge">{medals[rank]}</div>
+        <div className="rank-badge">{rankEmoji[rank]}</div>
       )}
 
-      {/* Title */}
-      <h3 className="issue-title">{issue.title}</h3>
+      <h3>{issue.title}</h3>
 
-      {/* Category + Status */}
-      <div className="badges">
-        <span className="badge category">{issue.category}</span>
-        <span className={`badge status ${issue.status}`}>
-          {issue.status}
-        </span>
+      <div style={{ marginBottom: "8px" }}>
+        <span className="badge">{issue.category}</span>
+        <span className={`badge ${issue.status}`}>{issue.status}</span>
       </div>
 
-      {/* Image */}
+      <p style={{ fontSize: "12px", color: "#777" }}>
+        {new Date(issue.createdAt).toLocaleDateString()}
+      </p>
+
       {issue.imageUrl && (
         <img
           src={issue.imageUrl}
           alt="issue"
-          className="issue-img"
-          loading="lazy"
+          style={{
+            width: "100%",
+            height: "160px",
+            objectFit: "cover",
+            borderRadius: "10px",
+            marginTop: "10px",
+          }}
         />
       )}
 
-      {/* Date */}
-      <p className="date">
-        {new Date(issue.createdAt).toLocaleDateString()}
-      </p>
+      <div style={{ marginTop: "12px" }}>
+        <button
+          className="upvote-btn"
+          onClick={() => onUpvote && onUpvote(issue.id)}
+        >
+          👍 {issue.upvotes || 0}
+        </button>
 
-      {/* Upvote */}
-      <button
-        className="upvote-btn"
-        onClick={() => onUpvote(issue.id)}
-        aria-label="Upvote issue"
-      >
-        ▲ {issue.upvotes || 0}
-      </button>
+        <button
+          className="toggle-btn"
+          onClick={() => setShowTimeline(!showTimeline)}
+        >
+          {showTimeline ? "▲ Hide Timeline" : "▼ View Timeline"}
+        </button>
+      </div>
 
-      {/* Toggle timeline */}
-      <button
-        className="toggle-btn"
-        onClick={() => setOpen(!open)}
-      >
-        {open ? "▲ Hide Timeline" : "▼ View Timeline"}
-      </button>
-
-      {/* Timeline */}
-      {open && <StatusTimeline timeline={issue.timeline} />}
+      {showTimeline && (
+        <div style={{ marginTop: "10px" }}>
+          <StatusTimeline timeline={issue.timeline} />
+        </div>
+      )}
     </article>
   );
 }

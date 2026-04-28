@@ -1,104 +1,186 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import IssueCard from "./IssueCard";
 import "./dashboard.css";
 
+import { Doughnut, Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+} from "chart.js";
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
+
 function Dashboard({ issues = [], onUpvote }) {
+  const [darkMode, setDarkMode] = useState(false);
 
-  // 🧪 MOCK DATA (for testing if empty)
-  if (issues.length === 0) {
-    issues = [
+  const mockIssues = [
+    {
+      id: "1",
+      title: "Garbage overflow",
+      category: "Sanitation",
+      status: "in_progress",
+      upvotes: 8,
+      createdAt: Date.now(),
+      timeline: [],
+    },
+    {
+      id: "2",
+      title: "Pothole near MG Road",
+      category: "Roads",
+      status: "open",
+      upvotes: 5,
+      createdAt: Date.now(),
+      timeline: [],
+    },
+    {
+      id: "3",
+      title: "Streetlight not working",
+      category: "Electricity",
+      status: "resolved",
+      upvotes: 3,
+      createdAt: Date.now(),
+      timeline: [],
+    },
+  ];
+
+  const baseData = issues.length ? issues : mockIssues;
+
+  const [liveIssues, setLiveIssues] = useState(baseData);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLiveIssues((prev) => [
+        {
+          id: Date.now().toString(),
+          title: "New issue reported (Live)",
+          category: "Roads",
+          status: "open",
+          upvotes: Math.floor(Math.random() * 5),
+          createdAt: Date.now(),
+          timeline: [],
+        },
+        ...prev,
+      ]);
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const data = liveIssues;
+
+  const total = data.length;
+  const open = data.filter((i) => i.status === "open").length;
+  const resolved = data.filter((i) => i.status === "resolved").length;
+
+  const topIssues = [...data]
+    .sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))
+    .slice(0, 3);
+
+  const showTop = topIssues.some((i) => i.upvotes > 0);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    data.forEach((i) => {
+      counts[i.category] = (counts[i.category] || 0) + 1;
+    });
+    return counts;
+  }, [data]);
+
+  const doughnutData = {
+    labels: Object.keys(categoryCounts),
+    datasets: [
       {
-        id: "1",
-        title: "Pothole near MG Road",
-        category: "Roads",
-        status: "open",
-        upvotes: 5,
-        createdAt: Date.now(),
-        timeline: [],
+        data: Object.values(categoryCounts),
+        backgroundColor: [
+          "#3498db",
+          "#e67e22",
+          "#2ecc71",
+          "#9b59b6",
+          "#f1c40f",
+          "#e74c3c",
+        ],
+      },
+    ],
+  };
+
+  const barData = {
+    labels: Object.keys(categoryCounts),
+    datasets: [
+      {
+        label: "Open",
+        data: Object.keys(categoryCounts).map(
+          (cat) => data.filter((i) => i.category === cat && i.status === "open").length
+        ),
+        backgroundColor: "#e67e22",
       },
       {
-        id: "2",
-        title: "Streetlight not working",
-        category: "Electricity",
-        status: "resolved",
-        upvotes: 2,
-        createdAt: Date.now(),
-        timeline: [],
+        label: "Resolved",
+        data: Object.keys(categoryCounts).map(
+          (cat) =>
+            data.filter((i) => i.category === cat && i.status === "resolved").length
+        ),
+        backgroundColor: "#27ae60",
       },
-      {
-        id: "3",
-        title: "Garbage overflow",
-        category: "Sanitation",
-        status: "in_progress",
-        upvotes: 8,
-        createdAt: Date.now(),
-        timeline: [],
-      },
-    ];
-  }
-
-  // 📊 KPI CALCULATIONS
-  const total = issues.length;
-  const open = issues.filter(i => i.status === "open").length;
-  const resolved = issues.filter(i => i.status === "resolved").length;
-
-  // 🔥 MOST UPVOTED (EXTRA TASK)
-  const topIssues = useMemo(() => {
-    const sorted = [...issues]
-      .sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0))
-      .slice(0, 3);
-
-    // hide if all upvotes are 0
-    if (sorted.every(i => (i.upvotes || 0) === 0)) {
-      return [];
-    }
-
-    return sorted;
-  }, [issues]);
+    ],
+  };
 
   return (
-    <div className="dashboard">
+    <div className={darkMode ? "dashboard dark" : "dashboard"}>
+      <button className="dark-btn" onClick={() => setDarkMode(!darkMode)}>
+        {darkMode ? "☀ Light" : "🌙 Dark"}
+      </button>
 
-      <h2>Dashboard</h2>
+      <h1>Dashboard</h1>
 
-      {/* KPI SECTION */}
-      <div className="kpi">
-        <div className="kpi-card">Total Issues: {total}</div>
+      <div className="kpi-container">
+        <div className="kpi-card">Total: {total}</div>
         <div className="kpi-card">Open: {open}</div>
         <div className="kpi-card">Resolved: {resolved}</div>
       </div>
 
-      {/* 🔥 MOST UPVOTED SECTION */}
-      {topIssues.length > 0 && (
-        <div className="top-section">
-          <h3>Most Upvoted Issues</h3>
-
-          {topIssues.map((issue, index) => (
-            <IssueCard
-              key={issue.id}
-              issue={issue}
-              onUpvote={onUpvote}
-              rank={index}
-            />
-          ))}
+      <div className="chart-row">
+        <div className="chart-small">
+          <Doughnut data={doughnutData} />
         </div>
-      )}
-
-      {/* ALL ISSUES */}
-      <div className="issue-list">
-        {issues.length === 0 ? (
-          <p>No issues reported yet.</p>
-        ) : (
-          issues.map(issue => (
-            <IssueCard
-              key={issue.id}
-              issue={issue}
-              onUpvote={onUpvote}
-            />
-          ))
-        )}
+        <div className="chart-small">
+          <Bar data={barData} />
+        </div>
       </div>
 
+      {showTop && (
+        <>
+          <h2>🔥 Most Upvoted</h2>
+          <div className="issue-list">
+            {topIssues.map((issue, index) => (
+              <IssueCard
+                key={issue.id}
+                issue={issue}
+                onUpvote={onUpvote}
+                rank={index}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      <h2>All Issues</h2>
+      <div className="issue-list">
+        {data.map((issue) => (
+          <IssueCard key={issue.id} issue={issue} onUpvote={onUpvote} />
+        ))}
+      </div>
     </div>
   );
 }
