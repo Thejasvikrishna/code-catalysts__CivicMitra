@@ -7,13 +7,13 @@ import { getDatabase } from "firebase/database";
 // 🔑 Paste your Firebase credentials here
 // Get these from: Firebase Console → Project Settings → Your Apps → SDK Setup
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com", // ← Critical for Realtime DB
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID",
+  apiKey: "AIzaSyCwj7OB0FOFtvhvD4-fejn6KYcbL7CtL6Y",
+  authDomain: "civicmitra-b04d5.firebaseapp.com",
+  databaseURL:       "https://civicmitra-b04d5-default-rtdb.firebaseio.com/",
+  projectId: "civicmitra-b04d5",
+  storageBucket: "civicmitra-b04d5.firebasestorage.app",
+  messagingSenderId: "164795109812",
+  appId: "1:164795109812:web:32f14367fb5c676b94e2e1"
 };
 
 const app = initializeApp(firebaseConfig);
