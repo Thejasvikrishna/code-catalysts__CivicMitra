@@ -1,15 +1,9 @@
-// Navbar.jsx — Member 4 | Shared component used in App.jsx
-// Props: activeTab (string), onTabChange (function)
+// Navbar.jsx — Member 4 | Shared navigation with dynamic tabs, user info, logout
+// Props: activeTab, onTabChange, tabs (array), user (firebase user), onLogout
 
 import React from "react";
 
-const TABS = [
-  { label: "Report Issue", icon: "📝" },
-  { label: "Live Map",     icon: "🗺️" },
-  { label: "Dashboard",    icon: "📊" },
-];
-
-export default function Navbar({ activeTab, onTabChange }) {
+export default function Navbar({ activeTab, onTabChange, tabs = [], user, onLogout }) {
   return (
     <nav
       aria-label="Main navigation"
@@ -21,27 +15,30 @@ export default function Navbar({ activeTab, onTabChange }) {
         display:         "flex",
         alignItems:      "center",
         justifyContent:  "space-between",
-        padding:         "0 1.5rem",
+        padding:         "0 1rem",
         height:          "56px",
         boxShadow:       "0 2px 8px rgba(0,0,0,0.25)",
+        gap:             "0.5rem",
       }}
     >
       {/* Brand */}
       <span
         style={{
-          color:       "#fff",
-          fontWeight:  700,
-          fontSize:    "1.15rem",
+          color:         "#fff",
+          fontWeight:    700,
+          fontSize:      "1.1rem",
           letterSpacing: "0.4px",
-          userSelect:  "none",
+          userSelect:    "none",
+          whiteSpace:    "nowrap",
+          flexShrink:    0,
         }}
       >
         🏙️ CivicMitra
       </span>
 
       {/* Tab Buttons */}
-      <div style={{ display: "flex", gap: "0.25rem" }}>
-        {TABS.map(({ label, icon }) => {
+      <div style={{ display: "flex", gap: "0.15rem", overflow: "auto" }}>
+        {tabs.map(({ label, icon }) => {
           const isActive = activeTab === label;
           return (
             <button
@@ -54,13 +51,14 @@ export default function Navbar({ activeTab, onTabChange }) {
                 borderBottom: isActive
                   ? "2px solid #ffffff"
                   : "2px solid transparent",
-                color:      isActive ? "#ffffff" : "rgba(255,255,255,0.60)",
+                color:       isActive ? "#ffffff" : "rgba(255,255,255,0.60)",
                 fontWeight:  isActive ? 600 : 400,
-                fontSize:    "0.9rem",
-                padding:     "0.55rem 0.85rem",
+                fontSize:    "0.85rem",
+                padding:     "0.5rem 0.7rem",
                 cursor:      "pointer",
                 transition:  "color 0.2s ease, border-color 0.2s ease",
                 whiteSpace:  "nowrap",
+                minHeight:   "44px",
               }}
             >
               {icon} {label}
@@ -68,6 +66,43 @@ export default function Navbar({ activeTab, onTabChange }) {
           );
         })}
       </div>
+
+      {/* User + Logout */}
+      {user && (
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexShrink: 0 }}>
+          <span
+            style={{
+              color:      "rgba(255,255,255,0.85)",
+              fontSize:   "0.78rem",
+              maxWidth:   "120px",
+              overflow:   "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={user.email}
+          >
+            {user.displayName || user.email}
+          </span>
+          <button
+            onClick={onLogout}
+            style={{
+              background:   "rgba(255,255,255,0.15)",
+              border:       "1px solid rgba(255,255,255,0.25)",
+              color:        "#fff",
+              borderRadius: "8px",
+              padding:      "0.35rem 0.75rem",
+              fontSize:     "0.8rem",
+              cursor:       "pointer",
+              minHeight:    "36px",
+              transition:   "background 0.2s",
+            }}
+            onMouseEnter={(e) => (e.target.style.background = "rgba(255,255,255,0.25)")}
+            onMouseLeave={(e) => (e.target.style.background = "rgba(255,255,255,0.15)")}
+          >
+            Logout
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

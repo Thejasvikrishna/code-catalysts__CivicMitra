@@ -1,0 +1,382 @@
+/* ── ReportForm Styles ───────────────────────────────────────────────────── */
+
+.report-form-wrapper {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ── Language Toggle ─────────────────────────────────────────────────────── */
+.lang-toggle {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  justify-content: flex-end;
+}
+
+.lang-btn {
+  padding: 0.4rem 0.85rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 36px;
+  transition: all 0.2s ease;
+}
+
+.lang-btn.active {
+  background: #01696f;
+  color: #fff;
+  border-color: #01696f;
+}
+
+.lang-btn:hover:not(.active) {
+  border-color: #01696f;
+  color: #01696f;
+}
+
+/* ── Form Card ───────────────────────────────────────────────────────────── */
+.report-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 1.75rem;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #01696f;
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e6f4f1;
+}
+
+/* ── Field Groups ────────────────────────────────────────────────────────── */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.field-group input[type="text"],
+.field-group textarea,
+.field-group select {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: #fafbfc;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.field-group input:focus,
+.field-group textarea:focus,
+.field-group select:focus {
+  border-color: #01696f;
+  box-shadow: 0 0 0 3px rgba(1, 105, 111, 0.1);
+  outline: none;
+  background: #fff;
+}
+
+.field-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+  padding: 0.25rem 0 0;
+}
+
+/* ── Auto-detect badge ───────────────────────────────────────────────────── */
+.auto-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  color: #065f46;
+  background: #d1fae5;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  width: fit-content;
+  margin-top: 0.15rem;
+}
+
+/* ── File upload ─────────────────────────────────────────────────────────── */
+.file-upload-area {
+  position: relative;
+}
+
+.file-upload-area input[type="file"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  background: #fafbfc;
+  cursor: pointer;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.file-upload-area input[type="file"]:hover {
+  border-color: #01696f;
+  background: #f0faf9;
+}
+
+.file-hint {
+  font-size: 0.82rem;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
+  pointer-events: none;
+  padding-top: 0.25rem;
+}
+
+.image-preview {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* ── Voice controls ──────────────────────────────────────────────────────── */
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.voice-btn {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  background: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.voice-btn:hover {
+  background: #e5e7eb;
+}
+
+.voice-btn.listening {
+  background: #fef2f2;
+  color: #b91c1c;
+  animation: pulseBg 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseBg {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  50%      { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+}
+
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulseDot 1s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.7); }
+}
+
+.transcript-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.88rem;
+  color: #166534;
+  margin-top: 0.35rem;
+}
+
+/* ── Similar issues warning ──────────────────────────────────────────────── */
+.similar-warning {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  color: #92400e;
+}
+
+.similar-item {
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  color: #78350f;
+}
+
+/* ── Submit button ───────────────────────────────────────────────────────── */
+.submit-btn {
+  background: linear-gradient(135deg, #01696f, #0d8a8f);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 50px;
+  transition: transform 0.15s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(1, 105, 111, 0.35);
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pending-badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+/* ── Form message ────────────────────────────────────────────────────────── */
+.form-message {
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.form-message.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.form-message.info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.form-message.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+/* ── Preview wrap + remove button ───────────────────────────────────────── */
+.preview-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.remove-img-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  min-height: auto;
+  transition: background 0.2s;
+}
+
+.remove-img-btn:hover {
+  background: rgba(0,0,0,0.75);
+}
+
+/* ── Location note ────────────────────────────────────────────────────────── */
+.location-note {
+  font-size: 0.82rem;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+}
+
+.location-note.success {
+  color: #065f46;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+/* ── Submit loading spinner ──────────────────────────────────────────────── */
+.submit-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .report-form {
+    padding: 1.5rem 1.25rem;
+    border-radius: 12px;
+  }
+  .form-heading {
+    font-size: 1.15rem;
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -8,7 +8,6 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import "leaflet.heat";
 
 import FilterBar from "./FilterBar";
 import {
@@ -17,75 +16,128 @@ import {
   STATUS_LABELS,
 } from "./markerIcons";
 
-// ===== MOCK DATA =====
-const mockIssues = Array.from({ length: 10 }).map((_, i) => ({
-  id: i.toString(),
-  title: `Issue ${i + 1}`,
-  category: ["Roads", "Water", "Electricity", "Sanitation", "Parks", "Other"][i % 6],
-  lat: 12.97 + (Math.random() - 0.5) * 0.02,
-  lng: 77.59 + (Math.random() - 0.5) * 0.02,
-  upvotes: Math.floor(Math.random() * 100),
-  status: ["open", "in_progress", "resolved"][i % 3],
-  imageUrl: "",
-}));
+// ===== SAFE HEATMAP LAYER =====
+// leaflet.heat modifies L globally — we import it carefully
+let heatLayerAvailable = false;
+try {
+  // leaflet.heat is a side-effect import that adds L.heatLayer
+  await import("leaflet.heat");
+  heatLayerAvailable = typeof L.heatLayer === "function";
+} catch {
+  heatLayerAvailable = false;
+}
 
-// ===== HEATMAP =====
-const HeatmapLayer = ({ points }) => {
+function HeatmapLayer({ points }) {
   const map = useMap();
+  const heatRef = useRef(null);
 
-  React.useEffect(() => {
-    if (!map || !points.length) return;
+  useEffect(() => {
+    if (!map || !points.length || !heatLayerAvailable) return;
 
-    const heat = L.heatLayer(points, {
-      radius: 25,
-      blur: 15,
-    }).addTo(map);
+    const heat = L.heatLayer(points, { radius: 25, blur: 15 }).addTo(map);
+    heatRef.current = heat;
 
-    return () => map.removeLayer(heat);
+    return () => {
+      if (heatRef.current) {
+        map.removeLayer(heatRef.current);
+        heatRef.current = null;
+      }
+    };
   }, [map, points]);
 
   return null;
-};
+}
 
 // ===== LOCATE BUTTON =====
-const LocateButton = () => {
+function LocateButton() {
   const map = useMap();
 
-  const locate = () => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      map.flyTo([pos.coords.latitude, pos.coords.longitude], 15);
-    });
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => map.flyTo([pos.coords.latitude, pos.coords.longitude], 15),
+      () => {} // silently fail
+    );
   };
 
   return (
-    <button style={styles.locate} onClick={locate}>
+    <button
+      onClick={handleLocate}
+      aria-label="Locate me on map"
+      style={{
+        position: "absolute",
+        bottom: 20,
+        right: 10,
+        zIndex: 1000,
+        padding: "10px 14px",
+        borderRadius: 10,
+        border: "1px solid #e5e7eb",
+        background: "white",
+        cursor: "pointer",
+        fontSize: "0.88rem",
+        fontWeight: 600,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        minHeight: 44,
+      }}
+    >
       📍 Locate Me
     </button>
   );
-};
+}
+
+// ===== ERROR BOUNDARY =====
+class MapErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err) {
+    console.error("Map error:", err);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", height: "100%", color: "#6b7280",
+        }}>
+          <p style={{ fontSize: "2rem" }}>🗺️</p>
+          <p style={{ fontWeight: 600 }}>Map failed to load</p>
+          <button
+            onClick={() => this.setState({ hasError: false })}
+            style={{
+              marginTop: 8, padding: "8px 16px", borderRadius: 8,
+              border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ===== MAIN COMPONENT =====
-const IssueMap = ({ issues }) => {
-  // 👉 Replace with real data later
-  const data = issues && issues.length ? issues : mockIssues;
+export default function IssueMap({ issues = [] }) {
+  const [filters, setFilters] = useState({ category: "All", status: "All" });
+  const [showHeat, setShowHeat] = useState(false);
 
-  const [filters, setFilters] = useState({
-    category: "All",
-    status: "All",
-  });
-
-  const [showHeat, setShowHeat] = useState(true);
-
-  // ===== FILTER =====
+  // Filter out issues with invalid coordinates first, then apply user filters
   const filtered = useMemo(() => {
-    return data.filter(
-      (i) =>
-        (filters.category === "All" || i.category === filters.category) &&
-        (filters.status === "All" || i.status === filters.status)
-    );
-  }, [data, filters]);
+    return issues
+      .filter((i) => typeof i.lat === "number" && typeof i.lng === "number" && !isNaN(i.lat) && !isNaN(i.lng))
+      .filter(
+        (i) =>
+          (filters.category === "All" || i.category === filters.category) &&
+          (filters.status === "All" || i.status === filters.status)
+      );
+  }, [issues, filters]);
 
-  // ===== EXTRA TASK: ISSUE COUNTS =====
   const openCount = filtered.filter((i) => i.status === "open").length;
   const inProgCount = filtered.filter((i) => i.status === "in_progress").length;
   const resolvedCount = filtered.filter((i) => i.status === "resolved").length;
@@ -95,125 +147,173 @@ const IssueMap = ({ issues }) => {
       ? `${openCount} open · ${inProgCount} in progress · ${resolvedCount} resolved`
       : `${openCount} open ${filters.category} issues`;
 
-  // ===== HEATMAP DATA =====
-  const heatPoints = filtered
-    .filter((i) => i.status !== "resolved")
-    .map((i) => [i.lat, i.lng, 1]);
+  const heatPoints = useMemo(() => {
+    return filtered
+      .filter((i) => i.status !== "resolved")
+      .map((i) => [i.lat, i.lng, 1]);
+  }, [filtered]);
 
   return (
-    <div style={{ height: "100vh", width: "100%" }}>
-      
-      {/* FILTER BAR */}
+    <div
+      style={{
+        position: "relative",
+        height: "calc(100vh - 130px)",
+        width: "100%",
+        borderRadius: 14,
+        overflow: "hidden",
+        boxShadow: "0 2px 16px rgba(0,0,0,0.1)",
+        border: "1px solid #e5e7eb",
+      }}
+    >
       <FilterBar filters={filters} onChange={setFilters} />
 
-      {/* ISSUE COUNT LABEL */}
-      <div style={styles.summary}>{summaryText}</div>
-
-      <MapContainer
-        center={[12.9716, 77.5946]}
-        zoom={13}
-        style={{ height: "100%", width: "100%" }}
+      <div
+        style={{
+          position: "absolute",
+          top: 60,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 1000,
+          background: "rgba(0,0,0,0.75)",
+          color: "white",
+          padding: "6px 16px",
+          borderRadius: 20,
+          fontSize: 13,
+          fontWeight: 500,
+          whiteSpace: "nowrap",
+        }}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {summaryText}
+      </div>
 
-        {/* MARKERS */}
-        {filtered.map((issue) => (
-          <Marker
-            key={issue.id}
-            position={[issue.lat, issue.lng]}
-            icon={createMarkerIcon(issue.category)}
-          >
-            <Popup>
-              <div>
-                <h4>{issue.title}</h4>
+      {issues.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 800,
+            textAlign: "center",
+            background: "rgba(255,255,255,0.92)",
+            padding: "1.5rem 2rem",
+            borderRadius: 14,
+            boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+          }}
+        >
+          <p style={{ fontSize: "2rem", margin: 0 }}>📍</p>
+          <p style={{ fontSize: "0.95rem", color: "#374151", fontWeight: 600, margin: "0.5rem 0 0.25rem" }}>
+            No issues reported yet
+          </p>
+          <p style={{ fontSize: "0.82rem", color: "#6b7280", margin: 0 }}>
+            Submit a report to see it on the map
+          </p>
+        </div>
+      )}
 
-                <span style={{
-                  background: CATEGORY_COLORS[issue.category],
-                  color: "white",
-                  padding: "3px 6px",
-                  borderRadius: "4px",
-                  marginRight: "5px"
-                }}>
-                  {issue.category}
-                </span>
+      <MapErrorBoundary>
+        <MapContainer
+          center={[12.9716, 77.5946]}
+          zoom={13}
+          scrollWheelZoom={true}
+          style={{ height: "100%", width: "100%", zIndex: 1 }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+          />
 
-                <span style={{
-                  background: "#555",
-                  color: "white",
-                  padding: "3px 6px",
-                  borderRadius: "4px"
-                }}>
-                  {STATUS_LABELS[issue.status]}
-                </span>
+          {filtered.map((issue) => (
+            <Marker
+              key={issue.id}
+              position={[issue.lat, issue.lng]}
+              icon={createMarkerIcon(issue.category)}
+            >
+              <Popup>
+                <div style={{ minWidth: 180 }}>
+                  <h4 style={{ margin: "0 0 6px", fontSize: "0.95rem" }}>
+                    {issue.title}
+                  </h4>
+                  <span
+                    style={{
+                      background: CATEGORY_COLORS[issue.category] || "#8e44ad",
+                      color: "white",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      marginRight: 5,
+                    }}
+                  >
+                    {issue.category}
+                  </span>
+                  <span
+                    style={{
+                      background:
+                        issue.status === "resolved" ? "#27ae60"
+                        : issue.status === "in_progress" ? "#2980b9"
+                        : "#e67e22",
+                      color: "white",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {STATUS_LABELS[issue.status]}
+                  </span>
+                  <p style={{ margin: "6px 0 0", fontSize: "0.82rem", color: "#555" }}>
+                    👍 {issue.upvotes || 0} upvotes
+                  </p>
+                  {issue.imageUrl && (
+                    <img
+                      src={issue.imageUrl}
+                      alt={`Photo of ${issue.title}`}
+                      style={{
+                        width: "100%",
+                        borderRadius: 6,
+                        marginTop: 6,
+                        maxHeight: 120,
+                        objectFit: "cover",
+                      }}
+                    />
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
 
-                <p>👍 {issue.upvotes}</p>
+          {showHeat && heatLayerAvailable && heatPoints.length > 0 && (
+            <HeatmapLayer points={heatPoints} />
+          )}
 
-                {issue.imageUrl && (
-                  <img
-                    src={issue.imageUrl}
-                    alt=""
-                    style={{ width: "100%", borderRadius: "6px" }}
-                  />
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+          <LocateButton />
+        </MapContainer>
+      </MapErrorBoundary>
 
-        {/* HEATMAP */}
-        {showHeat && heatPoints.length > 0 && (
-          <HeatmapLayer points={heatPoints} />
-        )}
-
-        <LocateButton />
-      </MapContainer>
-
-      {/* HEATMAP BUTTON */}
-      <button style={styles.heat} onClick={() => setShowHeat(!showHeat)}>
-        🔥 Heatmap
-      </button>
+      {heatLayerAvailable && (
+        <button
+          onClick={() => setShowHeat(!showHeat)}
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 1000,
+            padding: "8px 14px",
+            borderRadius: 10,
+            border: "1px solid #e5e7eb",
+            background: showHeat ? "#01696f" : "white",
+            color: showHeat ? "white" : "#374151",
+            cursor: "pointer",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            minHeight: 40,
+          }}
+        >
+          🔥 {showHeat ? "Hide" : "Show"} Heatmap
+        </button>
+      )}
     </div>
   );
-};
-
-// ===== STYLES =====
-const styles = {
-  locate: {
-    position: "absolute",
-    bottom: "20px",
-    right: "10px",
-    zIndex: 1000,
-    padding: "10px",
-    borderRadius: "8px",
-    border: "none",
-    background: "white",
-    cursor: "pointer",
-  },
-  heat: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    zIndex: 1000,
-    padding: "10px",
-    borderRadius: "8px",
-    border: "none",
-    background: "white",
-    cursor: "pointer",
-  },
-  summary: {
-    position: "absolute",
-    top: "60px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    zIndex: 1000,
-    background: "rgba(0,0,0,0.75)",
-    color: "white",
-    padding: "6px 14px",
-    borderRadius: "20px",
-    fontSize: "14px",
-    fontWeight: "500",
-    whiteSpace: "nowrap",
-  },
-};
-
-export default IssueMap;
+}

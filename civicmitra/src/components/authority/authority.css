@@ -1,0 +1,312 @@
+/* ── Authority Panel Styles ──────────────────────────────────────────────── */
+
+.authority-panel {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0.5rem 0;
+}
+
+/* ── Alert Banner ────────────────────────────────────────────────────────── */
+.authority-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid #f59e0b;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  animation: pulseAlert 2s ease-in-out infinite;
+}
+
+@keyframes pulseAlert {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+  50%      { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+}
+
+.alert-icon {
+  font-size: 1.75rem;
+  animation: ring 1.5s ease-in-out infinite;
+}
+
+@keyframes ring {
+  0%   { transform: rotate(0); }
+  10%  { transform: rotate(15deg); }
+  20%  { transform: rotate(-10deg); }
+  30%  { transform: rotate(8deg); }
+  40%  { transform: rotate(-5deg); }
+  50%, 100% { transform: rotate(0); }
+}
+
+.alert-text {
+  font-size: 0.95rem;
+  color: #92400e;
+}
+.alert-text strong {
+  color: #78350f;
+}
+
+/* ── Stats bar ───────────────────────────────────────────────────────────── */
+.authority-stats {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  user-select: none;
+}
+
+.stat-chip:hover {
+  border-color: #01696f;
+  background: #f0faf9;
+}
+
+.stat-chip.active {
+  background: #01696f;
+  color: #fff;
+  border-color: #01696f;
+}
+
+.stat-chip strong {
+  margin-left: 2px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.authority-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #9ca3af;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Issue List ──────────────────────────────────────────────────────────── */
+.authority-issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Issue Card ──────────────────────────────────────────────────────────── */
+.authority-issue-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.authority-issue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Top row */
+.issue-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.issue-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.issue-category {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.issue-status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.issue-time {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.issue-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.3rem;
+}
+
+.issue-desc {
+  font-size: 0.88rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.issue-thumb {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.issue-info-row {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+.issue-actions {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.75rem;
+}
+
+.action-toggle {
+  background: linear-gradient(135deg, #01696f, #0d8a8f);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.action-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(1, 105, 111, 0.3);
+}
+
+.action-expand {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.action-note-input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  min-height: 44px;
+}
+
+.action-note-input:focus {
+  border-color: #01696f;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(1, 105, 111, 0.1);
+}
+
+.action-confirm {
+  background: #27ae60;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.action-confirm:hover {
+  background: #219a52;
+}
+
+.action-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.issue-resolved-badge {
+  background: #ecfdf5;
+  color: #065f46;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid #a7f3d0;
+  margin-top: 0.5rem;
+}
+
+/* ── Dark mode support ───────────────────────────────────────────────────── */
+body.dark-mode .authority-issue-card {
+  background: #1e1e2f;
+  border-color: #2e303a;
+}
+body.dark-mode .issue-title {
+  color: #f3f4f6;
+}
+body.dark-mode .issue-desc {
+  color: #9ca3af;
+}
+body.dark-mode .stat-chip {
+  background: #1e1e2f;
+  border-color: #2e303a;
+  color: #d1d5db;
+}
+body.dark-mode .stat-chip.active {
+  background: #01696f;
+  color: #fff;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .action-expand {
+    flex-direction: column;
+  }
+  .authority-stats {
+    gap: 0.35rem;
+  }
+  .stat-chip {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.7rem;
+  }
+}
