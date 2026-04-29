@@ -32,6 +32,7 @@ function normalizeIssue(id, value) {
     upvotes:     typeof value.upvotes === "number" ? value.upvotes : 0,
     status:      value.status      || "open",
     createdAt:   value.createdAt   || null,
+    submittedBy: value.submittedBy || "Anonymous",
     timeline,
   };
 }

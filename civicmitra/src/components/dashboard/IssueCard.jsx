@@ -202,6 +202,7 @@ export default function IssueCard({ issue, onUpvote, rank }) {
               timeline={issue.timeline}
               resolvedImageUrl={issue.resolvedImageUrl}
               onImageClick={openLightbox}
+              submittedBy={issue.submittedBy}
             />
           </div>
         )}

@@ -18,7 +18,7 @@ function formatDate(ts) {
 }
 
 // onImageClick(src, alt) — provided by parent to open lightbox
-function TimelineEntry({ item, index, onImageClick }) {
+function TimelineEntry({ item, index, onImageClick, submittedBy }) {
   const [imgExpanded, setImgExpanded] = useState(false);
   const meta = STATUS_META[item.status] || { color: "#999", icon: "●", label: item.status };
 
@@ -39,7 +39,13 @@ function TimelineEntry({ item, index, onImageClick }) {
         </span>
 
         {/* Note */}
-        {item.note && <p className="tl-note">{item.note}</p>}
+        {item.note && (
+          <p className="tl-note">
+            {index === 0 && item.note === "Issue reported by citizen." && submittedBy
+              ? `Issue reported by ${submittedBy}.`
+              : item.note}
+          </p>
+        )}
 
         {/* Authority comment */}
         {item.comment && (
@@ -83,7 +89,7 @@ function TimelineEntry({ item, index, onImageClick }) {
   );
 }
 
-function StatusTimeline({ timeline, resolvedImageUrl, onImageClick }) {
+function StatusTimeline({ timeline, resolvedImageUrl, onImageClick, submittedBy }) {
   if (!timeline || Object.values(timeline).length === 0) {
     return <p className="tl-empty">No updates yet.</p>;
   }
@@ -117,6 +123,7 @@ function StatusTimeline({ timeline, resolvedImageUrl, onImageClick }) {
           item={item}
           index={idx}
           onImageClick={onImageClick}
+          submittedBy={submittedBy}
         />
       ))}
     </div>
