@@ -1,8 +1,24 @@
-// ReportForm.jsx — Member 1 | Accessible report form with voice, i18n, smart assistant
+// ReportForm.jsx — Member 1 | Accessible report form with voice input and smart assistant
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import useVoiceInput from "../../hooks/useVoiceInput";
 import "./ReportForm.css";
+
+// ── Free translation via MyMemory API (no API key needed) ────────────────────
+const LANG_CODES = { hi: "hi", kn: "kn" };
+async function translateText(text, targetLang) {
+  if (!text.trim()) return text;
+  const code = LANG_CODES[targetLang];
+  if (!code) return text;
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${code}`
+    );
+    const data = await res.json();
+    return data?.responseData?.translatedText || text;
+  } catch {
+    return text;
+  }
+}
 
 const categories = ["Roads", "Water", "Electricity", "Sanitation", "Parks", "Other"];
 
@@ -17,8 +33,6 @@ export default function ReportForm({
   findSimilarIssues,
   user,
 }) {
-  const { t, i18n } = useTranslation();
-
   const [form, setForm] = useState({ title: "", description: "", category: "" });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -30,9 +44,8 @@ export default function ReportForm({
   const [location, setLocation] = useState(null);
   const [locStatus, setLocStatus] = useState("idle"); // idle | getting | got | denied
 
-  const langMap = { en: "en-IN", hi: "hi-IN", kn: "kn-IN" };
   const { transcript, isListening, startListening, stopListening } =
-    useVoiceInput(langMap[i18n.language]);
+    useVoiceInput("en-IN");
 
   // Convert image to base64 for offline storage
   const fileToBase64 = (f) =>
@@ -78,14 +91,13 @@ export default function ReportForm({
   // Handle category change — manual override always wins
   const handleCategoryChange = (e) => {
     setForm((prev) => ({ ...prev, category: e.target.value }));
-    setAutoDetected(false); // user explicitly chose → clear auto badge
+    setAutoDetected(false);
   };
 
   // Handle title / description change + auto-detect category
   const handleChange = (e) => {
     const updated = { ...form, [e.target.name]: e.target.value };
     setForm(updated);
-    // Only auto-detect when user hasn't manually picked a category
     if (!autoDetected || e.target.name !== "category") {
       const detected = detectCategory?.(updated.title, updated.description);
       if (detected) {
@@ -127,7 +139,6 @@ export default function ReportForm({
           resolve(loc);
         },
         () => {
-          // Denied or timed out — use default silently
           setLocStatus("denied");
           resolve(DEFAULT_LOCATION);
         },
@@ -165,22 +176,21 @@ export default function ReportForm({
         return;
       }
 
-      // 3. Upload image (optional — skip silently if no file or upload fails)
+      // 3. Upload image (optional)
       let imageUrl = "";
       if (file && uploadImage) {
         try {
           imageUrl = await uploadImage(file);
         } catch (imgErr) {
           console.warn("Image upload failed — submitting without image:", imgErr.message);
-          // Continue without image rather than blocking the whole form
         }
       }
 
       // 4. Submit issue to Firebase
       await onSubmit({
-        title:       form.title.trim(),
+        title: form.title.trim(),
         description: form.description.trim(),
-        category:    form.category || "Other",
+        category: form.category || "Other",
         imageUrl,
         audioText: transcript || "",
         lat: loc.lat,
@@ -208,24 +218,6 @@ export default function ReportForm({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="report-form-wrapper">
-      {/* Language Toggle */}
-      <div className="lang-toggle">
-        {[
-          { code: "en", label: "EN" },
-          { code: "hi", label: "हिं" },
-          { code: "kn", label: "ಕನ್ನಡ" },
-        ].map(({ code, label }) => (
-          <button
-            key={code}
-            type="button"
-            className={`lang-btn ${i18n.language === code ? "active" : ""}`}
-            onClick={() => i18n.changeLanguage(code)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleSubmit} className="report-form">
         <h2 className="form-heading">📝 Report an Issue</h2>
 
@@ -259,7 +251,7 @@ export default function ReportForm({
 
         {/* Description */}
         <div className="field-group">
-          <label htmlFor="rf-desc">{t("description")}</label>
+          <label htmlFor="rf-desc">Description</label>
           <textarea
             id="rf-desc"
             name="description"
@@ -275,7 +267,7 @@ export default function ReportForm({
 
         {/* Category */}
         <div className="field-group">
-          <label htmlFor="rf-cat">{t("category")} *</label>
+          <label htmlFor="rf-cat">Category *</label>
           <select
             id="rf-cat"
             name="category"
@@ -284,7 +276,7 @@ export default function ReportForm({
             required
             aria-required="true"
           >
-            <option value="">{t("selectCategory")}</option>
+            <option value="">Select a category</option>
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -299,7 +291,7 @@ export default function ReportForm({
 
         {/* Photo Upload */}
         <div className="field-group">
-          <label htmlFor="rf-photo">{t("upload")} (optional)</label>
+          <label htmlFor="rf-photo">Upload Photo (optional)</label>
           <div className="file-upload-area">
             <input
               id="rf-photo"
@@ -320,7 +312,7 @@ export default function ReportForm({
 
         {/* Voice Input */}
         <div className="field-group">
-          <label>{t("voice")} (optional)</label>
+          <label>Voice Input (optional)</label>
           <div className="voice-controls">
             <button
               type="button"

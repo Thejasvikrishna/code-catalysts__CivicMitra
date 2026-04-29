@@ -56,6 +56,48 @@
   margin: 0;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid #e6f4f1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* Translating spinner badge */
+.translating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #0d8a8f;
+  background: #e6f4f1;
+  border: 1px solid #a7f3d0;
+  border-radius: 20px;
+  padding: 3px 10px;
+  animation: fadePulse 1.2s ease-in-out infinite;
+}
+
+.translating-spinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #a7f3d0;
+  border-top-color: #01696f;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes fadePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* ── Field Groups ────────────────────────────────────────────────────────── */
@@ -232,8 +274,15 @@
 }
 
 @keyframes pulseBg {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-  50%      { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
 }
 
 .pulse-dot {
@@ -245,8 +294,17 @@
 }
 
 @keyframes pulseDot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.4; transform: scale(0.7); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
 }
 
 .transcript-box {
@@ -357,7 +415,7 @@
   position: absolute;
   top: 6px;
   right: 6px;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -369,7 +427,7 @@
 }
 
 .remove-img-btn:hover {
-  background: rgba(0,0,0,0.75);
+  background: rgba(0, 0, 0, 0.75);
 }
 
 /* ── Location note ────────────────────────────────────────────────────────── */
@@ -399,7 +457,7 @@
 .btn-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255,255,255,0.4);
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -407,7 +465,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
@@ -416,6 +476,7 @@
     padding: 1.5rem 1.25rem;
     border-radius: 12px;
   }
+
   .form-heading {
     font-size: 1.15rem;
   }
