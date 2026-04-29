@@ -2,8 +2,8 @@
 // Receives alerts for new issues, can update status, add notes, and upload resolution images.
 import React, { useState, useMemo, useRef } from "react";
 import { updateStatus } from "../../services/issueService";
-import { uploadImage }  from "../../services/uploadImage";
-import ImageLightbox    from "../shared/ImageLightbox";
+import { uploadImage } from "../../services/uploadImage";
+import ImageLightbox from "../shared/ImageLightbox";
 import "./authority.css";
 
 const STATUS_FLOW = ["open", "in_progress", "resolved"];
@@ -18,25 +18,46 @@ const STATUS_COLORS = {
   resolved: "#27ae60",
 };
 const CATEGORY_COLORS = {
-  Roads:       "#e67e22",
-  Water:       "#2980b9",
+  Roads: "#e67e22",
+  Water: "#2980b9",
   Electricity: "#f1c40f",
-  Sanitation:  "#27ae60",
-  Parks:       "#16a085",
-  Other:       "#8e44ad",
+  Sanitation: "#27ae60",
+  Parks: "#16a085",
+  Other: "#8e44ad",
 };
 
+const DEPARTMENTS  = ["Roads", "Water", "Electricity", "Sanitation", "Parks", "Other"];
+const DEPT_ICONS   = { Roads: "🛣️", Water: "💧", Electricity: "⚡", Sanitation: "🧹", Parks: "🌳", Other: "📌" };
+const RADIUS_OPTIONS = [1, 5, 10, 25]; // km
+
+// Haversine formula — returns distance in km between two lat/lng points
+function haversine(lat1, lng1, lat2, lng2) {
+  const R   = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function AuthorityPanel({ issues = [] }) {
-  const [filter, setFilter]         = useState("all");
+  const [filter, setFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [locRadius, setLocRadius]   = useState(null);   // null = off, number = km
+  const [authLocation, setAuthLocation] = useState(null); // { lat, lng }
+  const [locStatus, setLocStatus]   = useState("idle"); // idle | getting | got | denied
   const [noteInputs, setNoteInputs] = useState({});
-  const [comments, setComments]     = useState({});
-  const [expanding, setExpanding]   = useState({});
-  const [updating, setUpdating]     = useState({});
+  const [comments, setComments] = useState({});
+  const [expanding, setExpanding] = useState({});
+  const [updating, setUpdating] = useState({});
 
   // Lightbox state
   const [lightboxSrc, setLightboxSrc] = useState(null);
   const [lightboxAlt, setLightboxAlt] = useState("");
-  const openLightbox  = (src, alt) => { setLightboxSrc(src); setLightboxAlt(alt || ""); };
+  const openLightbox = (src, alt) => { setLightboxSrc(src); setLightboxAlt(alt || ""); };
   const closeLightbox = () => setLightboxSrc(null);
 
   // Resolved image state per issue: { preview, file, uploading, url }
@@ -44,14 +65,39 @@ export default function AuthorityPanel({ issues = [] }) {
   const fileInputRefs = useRef({});
 
   // Counts
-  const alertCount    = issues.filter((i) => i.status === "open").length;
-  const inProgCount   = issues.filter((i) => i.status === "in_progress").length;
+  const alertCount = issues.filter((i) => i.status === "open").length;
+  const inProgCount = issues.filter((i) => i.status === "in_progress").length;
   const resolvedCount = issues.filter((i) => i.status === "resolved").length;
+// Get authority's current GPS location
+  const getMyLocation = () => {
+    if (!navigator.geolocation) { setLocStatus("denied"); return; }
+    setLocStatus("getting");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setAuthLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocStatus("got");
+        if (!locRadius) setLocRadius(5); // default radius once location is known
+      },
+      () => setLocStatus("denied"),
+      { timeout: 8000, maximumAge: 60000 }
+    );
+  };
 
+  const clearLocation = () => {
+    setAuthLocation(null);
+    setLocRadius(null);
+    setLocStatus("idle");
+  };
   const filtered = useMemo(() => {
-    if (filter === "all") return issues;
-    return issues.filter((i) => i.status === filter);
-  }, [issues, filter]);
+    return issues.filter((i) => {
+      const statusMatch = filter === "all" || i.status === filter;
+      const deptMatch = deptFilter === "all" || i.category === deptFilter;
+        const locMatch    =
+        !authLocation || !locRadius || (i.lat && i.lng &&
+          haversine(authLocation.lat, authLocation.lng, i.lat, i.lng) <= locRadius);
+      return statusMatch && deptMatch && locMatch;
+    });
+  }, [issues, filter, deptFilter, authLocation, locRadius]);
 
   const getNextStatus = (current) => {
     const idx = STATUS_FLOW.indexOf(current);
@@ -68,8 +114,8 @@ export default function AuthorityPanel({ issues = [] }) {
   };
 
   const handleStatusUpdate = async (issueId, newStatus) => {
-    const note    = noteInputs[issueId] || "";
-    const comment = comments[issueId]   || "";
+    const note = noteInputs[issueId] || "";
+    const comment = comments[issueId] || "";
     setUpdating((prev) => ({ ...prev, [issueId]: true }));
     try {
       let resolvedImageUrl = "";
@@ -94,9 +140,9 @@ export default function AuthorityPanel({ issues = [] }) {
         comment
       );
 
-      setNoteInputs((prev)     => ({ ...prev, [issueId]: "" }));
-      setComments((prev)       => ({ ...prev, [issueId]: "" }));
-      setExpanding((prev)      => ({ ...prev, [issueId]: false }));
+      setNoteInputs((prev) => ({ ...prev, [issueId]: "" }));
+      setComments((prev) => ({ ...prev, [issueId]: "" }));
+      setExpanding((prev) => ({ ...prev, [issueId]: false }));
       setResolvedImages((prev) => {
         const next = { ...prev };
         delete next[issueId];
@@ -135,7 +181,7 @@ export default function AuthorityPanel({ issues = [] }) {
         </div>
       </div>
 
-      {/* Stats bar */}
+      {/* Status filter bar */}
       <div className="authority-stats">
         <div className={`stat-chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>
           📋 All <strong>{issues.length}</strong>
@@ -151,6 +197,83 @@ export default function AuthorityPanel({ issues = [] }) {
         </div>
       </div>
 
+      {/* Department filter bar */}
+      <div className="authority-dept-filter">
+        <span className="dept-filter-label">Department:</span>
+        <div className="dept-chips">
+          <button
+            className={`dept-chip ${deptFilter === "all" ? "active" : ""}`}
+            onClick={() => setDeptFilter("all")}
+          >
+            All Departments
+          </button>
+          {DEPARTMENTS.map((dept) => {
+            const count = issues.filter((i) => i.category === dept).length;
+            return (
+              <button
+                key={dept}
+                className={`dept-chip ${deptFilter === dept ? "active" : ""}`}
+                style={deptFilter === dept ? { background: CATEGORY_COLORS[dept], borderColor: CATEGORY_COLORS[dept] } : { borderColor: CATEGORY_COLORS[dept] }}
+                onClick={() => setDeptFilter((prev) => prev === dept ? "all" : dept)}
+              >
+                {DEPT_ICONS[dept]} {dept}
+                {count > 0 && <span className="dept-chip-count">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+        {deptFilter !== "all" && (
+          <span className="dept-active-label">
+            Showing: <strong>{deptFilter}</strong> ({filtered.length} issue{filtered.length !== 1 ? "s" : ""})
+          </span>
+        )}
+      </div>
+ {/* Location filter bar */}
+      <div className="authority-loc-filter">
+        <div className="loc-filter-header">
+          <span className="dept-filter-label">📍 Location:</span>
+          {locStatus !== "got" ? (
+            <button
+              className={`loc-btn ${locStatus === "getting" ? "loading" : ""}`}
+              onClick={getMyLocation}
+              disabled={locStatus === "getting"}
+            >
+              {locStatus === "getting" ? "Getting location…" :
+               locStatus === "denied"  ? "⚠️ Access denied — retry" :
+               "📡 Use My Location"}
+            </button>
+          ) : (
+            <div className="loc-active-row">
+              <span className="loc-got-badge">✅ Location set</span>
+              <button className="loc-clear-btn" onClick={clearLocation}>✕ Clear</button>
+            </div>
+          )}
+        </div>
+
+        {locStatus === "got" && authLocation && (
+          <div className="loc-radius-row">
+            <span className="loc-radius-label">Radius:</span>
+            {RADIUS_OPTIONS.map((r) => (
+              <button
+                key={r}
+                className={`loc-radius-chip ${locRadius === r ? "active" : ""}`}
+                onClick={() => setLocRadius(r)}
+              >
+                {r} km
+              </button>
+            ))}
+            <span className="loc-result-count">
+              {filtered.length} issue{filtered.length !== 1 ? "s" : ""} within {locRadius} km
+            </span>
+          </div>
+        )}
+
+        {locStatus === "denied" && (
+          <p className="loc-denied-note">
+            Location access was denied. Enable it in your browser settings and try again.
+          </p>
+        )}
+      </div>
       {/* Issue List */}
       {filtered.length === 0 ? (
         <div className="authority-empty">
@@ -161,8 +284,8 @@ export default function AuthorityPanel({ issues = [] }) {
         <div className="authority-issue-list">
           {filtered.map((issue) => {
             const nextStatus = getNextStatus(issue.status);
-            const isOpen     = expanding[issue.id];
-            const imgState   = resolvedImages[issue.id];
+            const isOpen = expanding[issue.id];
+            const imgState = resolvedImages[issue.id];
 
             return (
               <article key={issue.id} className="authority-issue-card">
@@ -318,8 +441,8 @@ export default function AuthorityPanel({ issues = [] }) {
                           {imgState?.uploading
                             ? "Uploading image…"
                             : updating[issue.id]
-                            ? "Updating…"
-                            : `✓ Confirm ${STATUS_LABELS[nextStatus]}`}
+                              ? "Updating…"
+                              : `✓ Confirm ${STATUS_LABELS[nextStatus]}`}
                         </button>
                       </div>
                     )}
