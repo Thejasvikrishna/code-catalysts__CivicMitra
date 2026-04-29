@@ -39,7 +39,7 @@ export async function addIssue(issueData) {
     timeline: [
       {
         status:    "open",
-        note:      "Issue reported by citizen.",
+        note:      `Issue reported by ${issueData.submittedBy || "Anonymous"}.`,
         timestamp: timestamp,
       },
     ],

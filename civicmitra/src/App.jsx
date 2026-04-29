@@ -156,6 +156,7 @@ export default function App() {
             findSimilarIssues={(lat, lng, cat) =>
               findSimilarIssues(issues, lat, lng, cat)
             }
+            user={user}
           />
         )}
 

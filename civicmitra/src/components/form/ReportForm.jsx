@@ -15,6 +15,7 @@ export default function ReportForm({
   detectCategory,
   suggestDescription,
   findSimilarIssues,
+  user,
 }) {
   const { t, i18n } = useTranslation();
 
@@ -74,16 +75,25 @@ export default function ReportForm({
     return () => window.removeEventListener("online", syncPending);
   }, [onSubmit, uploadImage]);
 
-  // Handle input change + auto-detect category
+  // Handle category change — manual override always wins
+  const handleCategoryChange = (e) => {
+    setForm((prev) => ({ ...prev, category: e.target.value }));
+    setAutoDetected(false); // user explicitly chose → clear auto badge
+  };
+
+  // Handle title / description change + auto-detect category
   const handleChange = (e) => {
     const updated = { ...form, [e.target.name]: e.target.value };
     setForm(updated);
-    const detected = detectCategory?.(updated.title, updated.description);
-    if (detected) {
-      setForm((prev) => ({ ...prev, category: detected }));
-      setAutoDetected(true);
-    } else {
-      setAutoDetected(false);
+    // Only auto-detect when user hasn't manually picked a category
+    if (!autoDetected || e.target.name !== "category") {
+      const detected = detectCategory?.(updated.title, updated.description);
+      if (detected) {
+        setForm((prev) => ({ ...prev, category: detected }));
+        setAutoDetected(true);
+      } else if (!form.category) {
+        setAutoDetected(false);
+      }
     }
   };
 
@@ -219,6 +229,19 @@ export default function ReportForm({
       <form onSubmit={handleSubmit} className="report-form">
         <h2 className="form-heading">📝 Report an Issue</h2>
 
+        {/* Reporting-as chip */}
+        {user && (
+          <div className="reporting-as-chip">
+            <span className="reporting-as-avatar">
+              {(user.displayName || user.email || "A")[0].toUpperCase()}
+            </span>
+            <span>
+              Reporting as&nbsp;
+              <strong>{user.displayName || user.email || "Anonymous"}</strong>
+            </span>
+          </div>
+        )}
+
         {/* Title */}
         <div className="field-group">
           <label htmlFor="rf-title">Title *</label>
@@ -257,7 +280,7 @@ export default function ReportForm({
             id="rf-cat"
             name="category"
             value={form.category}
-            onChange={handleChange}
+            onChange={handleCategoryChange}
             required
             aria-required="true"
           >
@@ -267,7 +290,10 @@ export default function ReportForm({
             ))}
           </select>
           {autoDetected && (
-            <span className="auto-badge">✨ Auto-detected</span>
+            <div className="auto-detected-row">
+              <span className="auto-badge">✨ Auto-detected</span>
+              <span className="auto-hint">Not right? Use the dropdown above to change it.</span>
+            </div>
           )}
         </div>
 
